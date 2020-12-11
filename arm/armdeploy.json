@@ -1,0 +1,90 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "SqlAdminLogin": {
+      "type": "string"
+    },
+    "SqlAdminLoginPassword": {
+      "type": "securestring",
+      "minLength": 8
+    },
+    "SalesDacPacPath": {
+      "type": "string"
+    },
+    "StreamingDacPacPath": {
+      "type": "string"
+    },
+    "BackupStorageContainerSAS": {
+      "type": "securestring",
+      "minLength": 1
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "namePrefix": {
+      "type": "string",
+      "defaultValue": "kwf"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "apiVersion": "2018-05-01",
+      "name": "sqldb-linked-template",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[uri(deployment().properties.templateLink.uri, 'sqldb.json')",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "AdminLogin": {
+            "value": "[parameters('SqlAdminLogin')]"
+          },
+          "AdminLoginPassword": {
+            "value": "[parameters('SqlAdminLoginPassword')]"
+          },
+          "SalesDacPacPath": {
+            "value": "[parameters('SalesDacPacPath')]"
+          },
+          "StreamingDacPacPath": {
+            "value": "[parameters('StreamingDacPacPath')]"
+          },
+          "DacPacContainerSAS": {
+            "value": "[concat('?', parameters('BackupStorageContainerSAS'))]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "namePrefix": {
+            "value": "[parameters('namePrefix')]"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "2018-05-01",
+      "name": "cosmosdb-linked-template",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[uri(deployment().properties.templateLink.uri, 'cosmosdb.json')",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "namePrefix": {
+            "value": "[parameters('namePrefix')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
