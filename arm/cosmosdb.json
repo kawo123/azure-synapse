@@ -8,7 +8,7 @@
         },
         "namePrefix": {
             "type": "string",
-            "defaultValue": "OHDataCosmos",
+            "defaultValue": "kwf",
             "maxLength": 30
         }
     },
@@ -17,7 +17,7 @@
         {
             "name": "[concat(parameters('namePrefix'), '-catalog-', uniqueString(resourceGroup().id))]",
             "type": "Microsoft.DocumentDB/databaseAccounts",
-            "apiVersion": "2015-04-08",
+            "apiVersion": "2020-06-01-preview",
             "location": "[parameters('location')]",
             "tags": {},
             "kind": "GlobalDocumentDB",
@@ -28,7 +28,12 @@
                         "failoverPriority": 0
                     }
                 ],
-                "databaseAccountOfferType": "Standard"
+                "databaseAccountOfferType": "Standard",
+                "capabilities": [
+                    {
+                        "name": "EnableServerless"
+                    }
+                ]
             }
         }
     ],
