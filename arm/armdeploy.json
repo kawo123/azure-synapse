@@ -37,7 +37,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[uri(deployment().properties.templateLink.uri, 'sqldb.json')",
+          "uri": "https://raw.githubusercontent.com/kawo123/azure-synapse/main/arm/sqldb.json",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
@@ -72,7 +72,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[uri(deployment().properties.templateLink.uri, 'cosmosdb.json')",
+          "uri": "https://raw.githubusercontent.com/kawo123/azure-synapse/main/arm/cosmosdb.json",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {

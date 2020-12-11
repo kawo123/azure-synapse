@@ -28,13 +28,13 @@
     }
   },
   "variables": {
-    "ohmdw-sqlserver-Name": "[concat(parameters('namePrefix'), '-sqlserver-', uniqueString(resourceGroup().id))]"},
+    "sqlServerName": "[concat(parameters('namePrefix'), '-sqlserver-', uniqueString(resourceGroup().id))]"},
   "resources": [
     {
-      "name": "[variables('ohmdw-sqlserver-Name')]",
+      "name": "[variables('sqlServerName')]",
       "type": "Microsoft.Sql/servers",
       "location": "[parameters('location')]",
-      "apiVersion": "2014-04-01-preview",
+      "apiVersion": "2020-08-01-preview",
       "dependsOn": [ ],
       "tags": {
         "displayName": "[concat(parameters('namePrefix'), '-sqlserver')]"
@@ -47,10 +47,10 @@
         {
           "name": "AllowAllWindowsAzureIps",
           "type": "firewallrules",
-          "apiVersion": "2014-04-01-preview",
+          "apiVersion": "2020-08-01-preview",
           "location": "[parameters('location')]",
           "dependsOn": [
-            "[resourceId('Microsoft.Sql/servers', variables('ohmdw-sqlserver-Name'))]"
+            "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
           ],
           "properties": {
             "endIpAddress": "0.0.0.0",
@@ -61,26 +61,37 @@
           "name": "CloudSales",
           "type": "databases",
           "location": "[parameters('location')]",
-          "apiVersion": "2014-04-01-preview",
+          "apiVersion": "2020-08-01-preview",
           "dependsOn": [
-            "[resourceId('Microsoft.Sql/servers', variables('ohmdw-sqlserver-Name'))]"
+            "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
           ],
           "tags": {
             "displayName": "CloudSales"
           },
+          "sku": {
+            "name": "GP_S_Gen5",
+            "tier": "GeneralPurpose",
+            "family": "Gen5",
+            "capacity": 2
+          },
+          "kind": "v12.0,user,vcore,serverless",
           "properties": {
-            "collation": "SQL_Latin1_General_CP1_CI_AS",
-            "edition": "Standard",
-            "maxSizeBytes": "1073741824",
-            "requestedServiceObjectiveName": "S2"
+              "collation": "SQL_Latin1_General_CP1_CI_AS",
+              "maxSizeBytes": "34359738368",
+              "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+              "zoneRedundant": false,
+              "readScale": "Disabled",
+              "autoPauseDelay": 60,
+              "storageAccountType": "GRS",
+              "minCapacity": 0.5
           },
           "resources": [
             {
               "name": "Import",
               "type": "extensions",
-              "apiVersion": "2014-04-01-preview",
+              "apiVersion": "2020-08-01-preview",
               "dependsOn": [
-                "[concat('Microsoft.Sql/servers/', variables('ohmdw-sqlserver-Name'), '/databases/CloudSales')]"
+                "[concat('Microsoft.Sql/servers/', variables('sqlServerName'), '/databases/CloudSales')]"
               ],
               "properties": {
                 "storageKeyType": "SharedAccessKey",
@@ -98,26 +109,37 @@
           "name": "CloudStreaming",
           "type": "databases",
           "location": "[parameters('location')]",
-          "apiVersion": "2014-04-01-preview",
+          "apiVersion": "2020-08-01-preview",
           "dependsOn": [
-            "[resourceId('Microsoft.Sql/servers', variables('ohmdw-sqlserver-Name'))]"
+            "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
           ],
           "tags": {
             "displayName": "CloudStreaming"
           },
+          "sku": {
+            "name": "GP_S_Gen5",
+            "tier": "GeneralPurpose",
+            "family": "Gen5",
+            "capacity": 2
+          },
+          "kind": "v12.0,user,vcore,serverless",
           "properties": {
-            "collation": "SQL_Latin1_General_CP1_CI_AS",
-            "edition": "Standard",
-            "maxSizeBytes": "1073741824",
-            "requestedServiceObjectiveName": "S2"
+              "collation": "SQL_Latin1_General_CP1_CI_AS",
+              "maxSizeBytes": "34359738368",
+              "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+              "zoneRedundant": false,
+              "readScale": "Disabled",
+              "autoPauseDelay": 60,
+              "storageAccountType": "GRS",
+              "minCapacity": 0.5
           },
           "resources": [
             {
               "name": "Import",
               "type": "extensions",
-              "apiVersion": "2014-04-01-preview",
+              "apiVersion": "2020-08-01-preview",
               "dependsOn": [
-                "[concat('Microsoft.Sql/servers/', variables('ohmdw-sqlserver-Name'), '/databases/CloudStreaming')]"
+                "[concat('Microsoft.Sql/servers/', variables('sqlServerName'), '/databases/CloudStreaming')]"
               ],
               "properties": {
                 "storageKeyType": "SharedAccessKey",
