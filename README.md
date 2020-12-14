@@ -13,7 +13,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 ```powershell
-Install-Module -Name Az -RequiredVersion 4.2.0 -Force -AllowClobber -SkipPublisherCheck
+Install-Module -Name Az -AllowClobber -Force -SkipPublisherCheck
 ```
 
 ```powershell
@@ -27,11 +27,11 @@ Select-AzSubscription -Subscription <The selected Subscription Id>
 ```powershell
 $sqlpwd = "ThePasswordYouWantToUseForSQL" | ConvertTo-SecureString -AsPlainText -Force
 $containerSAS = "TheContainerSASYouHave" | ConvertTo-SecureString -AsPlainText -Force
+
+.\deploy.ps1 -SqlAdminLoginPassword $sqlpwd -BackupStorageContainerSAS $containerSAS
 ```
 
-```powershell
- .\deploy.ps1 -SqlAdminLoginPassword $sqlpwd -BackupStorageContainerSAS $containerSAS
-```
+Import movie data from `./data/movies_southridge.json` to Azure Cosmos DB using Data Explorer
 
 ## TODOs
 
