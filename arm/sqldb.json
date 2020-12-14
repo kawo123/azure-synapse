@@ -28,14 +28,15 @@
     }
   },
   "variables": {
-    "sqlServerName": "[concat(parameters('namePrefix'), '-sqlserver-', uniqueString(resourceGroup().id))]"},
+    "sqlServerName": "[concat(parameters('namePrefix'), '-sqlserver-', uniqueString(resourceGroup().id))]"
+  },
   "resources": [
     {
       "name": "[variables('sqlServerName')]",
       "type": "Microsoft.Sql/servers",
       "location": "[parameters('location')]",
       "apiVersion": "2019-06-01-preview",
-      "dependsOn": [ ],
+      "dependsOn": [],
       "tags": {
         "displayName": "[concat(parameters('namePrefix'), '-sqlserver')]"
       },
@@ -76,14 +77,14 @@
           },
           "kind": "v12.0,user,vcore,serverless",
           "properties": {
-              "collation": "SQL_Latin1_General_CP1_CI_AS",
-              "maxSizeBytes": "34359738368",
-              "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
-              "zoneRedundant": false,
-              "readScale": "Disabled",
-              "autoPauseDelay": 60,
-              "storageAccountType": "GRS",
-              "minCapacity": 0.5
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "maxSizeBytes": "34359738368",
+            "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+            "zoneRedundant": false,
+            "readScale": "Disabled",
+            "autoPauseDelay": 60,
+            "storageAccountType": "GRS",
+            "minCapacity": 0.5
           },
           "resources": [
             {
@@ -124,14 +125,14 @@
           },
           "kind": "v12.0,user,vcore,serverless",
           "properties": {
-              "collation": "SQL_Latin1_General_CP1_CI_AS",
-              "maxSizeBytes": "34359738368",
-              "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
-              "zoneRedundant": false,
-              "readScale": "Disabled",
-              "autoPauseDelay": 60,
-              "storageAccountType": "GRS",
-              "minCapacity": 0.5
+            "collation": "SQL_Latin1_General_CP1_CI_AS",
+            "maxSizeBytes": "34359738368",
+            "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+            "zoneRedundant": false,
+            "readScale": "Disabled",
+            "autoPauseDelay": 60,
+            "storageAccountType": "GRS",
+            "minCapacity": 0.5
           },
           "resources": [
             {
@@ -154,6 +155,7 @@
           ]
         }
       ]
-    }],
+    }
+  ],
   "outputs": {}
 }
