@@ -3,7 +3,7 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Dataflow_DimCustomers",
+				"name": "Dataflow_Customers",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -16,14 +16,14 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "Dataflow_DimCustomers",
+						"referenceName": "Dataflow_Customers",
 						"type": "DataFlowReference"
 					},
 					"compute": {
 						"coreCount": 8,
 						"computeType": "General"
 					},
-					"traceLevel": "Fine"
+					"traceLevel": "Coarse"
 				}
 			}
 		],
