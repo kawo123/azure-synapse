@@ -1,0 +1,70 @@
+{
+	"name": "Dataflow_DimMovieActors",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_Movies_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetMoviesParquet"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_DimActors_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetDimActorsParquet"
+				},
+				{
+					"dataset": {
+						"referenceName": "Dataset_FactMovieActors_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetFactMovieActorsParquet"
+				},
+				{
+					"dataset": {
+						"referenceName": "Dataset_DimMovies_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetDimMoviesParquet"
+				}
+			],
+			"transformations": [
+				{
+					"name": "UniqueActors"
+				},
+				{
+					"name": "DeriveActorID"
+				},
+				{
+					"name": "DimActors"
+				},
+				{
+					"name": "MovieActors"
+				},
+				{
+					"name": "JoinActorID"
+				},
+				{
+					"name": "RemoveActorName"
+				},
+				{
+					"name": "DeriveMovieActorsID"
+				},
+				{
+					"name": "DedupMovies"
+				},
+				{
+					"name": "RemoveActorandCatalogID"
+				}
+			],
+			"script": "source(output(\n\t\tActor as string,\n\t\tReleaseDate as date,\n\t\tGenre as string,\n\t\tRating as string,\n\t\tAvailabilityYear as integer,\n\t\tRuntime as short,\n\t\tAvailabilityDate as date,\n\t\tMovieTier as short,\n\t\tMovieTitle as string,\n\t\tMovieID as string,\n\t\tCatalogID as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t)) ~> DatasetMoviesParquet\nDatasetMoviesParquet aggregate(groupBy(Actor),\n\tDummyCount = count(1)) ~> UniqueActors\nUniqueActors derive(ActorID = uuid()) ~> DeriveActorID\nDeriveActorID select(mapColumn(\n\t\tActorName = Actor,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimActors\nDatasetMoviesParquet select(mapColumn(\n\t\tActor,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MovieActors\nMovieActors, DimActors join(Actor == ActorName,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinActorID\nJoinActorID select(mapColumn(\n\t\tMovieID,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorName\nRemoveActorName derive(MovieActorID = uuid()) ~> DeriveMovieActorsID\nRemoveActorandCatalogID aggregate(groupBy(MovieID),\n\teach(match(name!='MovieID'), $$ = max($$))) ~> DedupMovies\nDatasetMoviesParquet select(mapColumn(\n\t\tReleaseDate,\n\t\tGenre,\n\t\tRating,\n\t\tAvailabilityYear,\n\t\tRuntime,\n\t\tAvailabilityDate,\n\t\tMovieTier,\n\t\tMovieTitle,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorandCatalogID\nDimActors sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimActorsParquet\nDeriveMovieActorsID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactMovieActorsParquet\nDedupMovies sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimMoviesParquet"
+		}
+	}
+}

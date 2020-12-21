@@ -1,0 +1,73 @@
+{
+	"name": "Dataflow_DimTransactions",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_Orders_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetOrdersParquet"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_DimTransactions_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetDimTransactionsParquet"
+				},
+				{
+					"dataset": {
+						"referenceName": "Dataset_DimTransactionDetails_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetDimTransactionDetailsParquet"
+				},
+				{
+					"dataset": {
+						"referenceName": "Dataset_FactTransactionDetails_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetFactTransactionDetailsParquet"
+				}
+			],
+			"transformations": [
+				{
+					"name": "UniqueOrders"
+				},
+				{
+					"name": "DuplicateOrders"
+				},
+				{
+					"name": "DeriveProcessDate"
+				},
+				{
+					"name": "UniqueOrderDetails"
+				},
+				{
+					"name": "JoinOrderDetails"
+				},
+				{
+					"name": "DimTransactionDetails"
+				},
+				{
+					"name": "DeriveProcessDate2"
+				},
+				{
+					"name": "FactTransactionDetails"
+				},
+				{
+					"name": "DeriveID"
+				},
+				{
+					"name": "SelectTransactionColumns"
+				}
+			],
+			"script": "source(output(\n\t\tOrderID as string,\n\t\tCustomerID as string,\n\t\tOrderDate as string,\n\t\tShipDate as string,\n\t\tTotalCost as string,\n\t\tOrderDetailID as string,\n\t\tMovieID as string,\n\t\tQuantity as string,\n\t\tUnitCost as string,\n\t\tLineNumber as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('roundRobin', 5)) ~> DatasetOrdersParquet\nSelectTransactionColumns aggregate(groupBy(TransactionID),\n\teach(match(name!='TransactionID'), $$ = max($$))) ~> UniqueOrders\nDatasetOrdersParquet select(mapColumn(\n\t\tOrderID,\n\t\tCustomerID,\n\t\tOrderDate,\n\t\tShipDate,\n\t\tTotalCost,\n\t\tOrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateOrders\nUniqueOrders derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDatasetOrdersParquet aggregate(groupBy(OrderDetailID),\n\tDummyCount = count()) ~> UniqueOrderDetails\nUniqueOrderDetails, DuplicateOrders join(UniqueOrderDetails@OrderDetailID == DuplicateOrders@OrderDetailID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinOrderDetails\nJoinOrderDetails select(mapColumn(\n\t\tTransactionDetailID = UniqueOrderDetails@OrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimTransactionDetails\nDimTransactionDetails derive(ProcessDate = currentDate()) ~> DeriveProcessDate2\nDuplicateOrders select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tTransactionDetailID = OrderDetailID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> FactTransactionDetails\nFactTransactionDetails derive(ID = uuid()) ~> DeriveID\nDatasetOrdersParquet select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tCustomerID,\n\t\tTransactionDate = OrderDate,\n\t\tShipDate,\n\t\tTotalCost\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectTransactionColumns\nDeriveProcessDate sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionsParquet\nDeriveProcessDate2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionDetailsParquet\nDeriveID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactTransactionDetailsParquet"
+		}
+	}
+}
