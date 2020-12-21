@@ -1,0 +1,1132 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "synapse-adf"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/DestinationDataset_fkp')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"cw_fileName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().cw_fileName",
+							"type": "Expression"
+						},
+						"folderPath": "AzureSQL/CloudSales",
+						"fileSystem": "bronze"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DestinationDataset_xsh')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "movies.json",
+						"folderPath": "CosmosDB",
+						"fileSystem": "bronze"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SourceDataset_58o')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDbCloudStreaming",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"cw_table": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().cw_table",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SourceDataset_fkp')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDbCloudSales",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"cw_table": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().cw_table",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SourceDataset_xsh')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "CosmosDb",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "CosmosDbSqlApiCollection",
+				"schema": {
+					"type": "object",
+					"properties": {
+						"actors": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string"
+									}
+								}
+							}
+						},
+						"availabilityDate": {
+							"type": "string"
+						},
+						"genre": {
+							"type": "string"
+						},
+						"rating": {
+							"type": "string"
+						},
+						"releaseYear": {
+							"type": "integer"
+						},
+						"runtime": {
+							"type": "integer"
+						},
+						"streamingAvailabilityDate": {
+							"type": "string"
+						},
+						"tier": {
+							"type": "integer"
+						},
+						"title": {
+							"type": "string"
+						}
+					}
+				},
+				"typeProperties": {
+					"collectionName": "movies"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Pipeline_Copy_AzureSQLCloudSalesToDataLake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEach_fkp",
+						"type": "ForEach",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@pipeline().parameters.cw_items",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Copy_fkp",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "dbo.@{item().source.table}"
+										},
+										{
+											"name": "Destination",
+											"value": "bronze/AzureSQL/CloudSales/@{item().destination.fileName}"
+										}
+									],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"validateDataConsistency": false
+									},
+									"inputs": [
+										{
+											"referenceName": "SourceDataset_fkp",
+											"type": "DatasetReference",
+											"parameters": {
+												"cw_table": "@item().source.table"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DestinationDataset_fkp",
+											"type": "DatasetReference",
+											"parameters": {
+												"cw_fileName": "@item().destination.fileName"
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"parameters": {
+					"cw_items": {
+						"type": "Array",
+						"defaultValue": [
+							{
+								"source": {
+									"table": "Addresses"
+								},
+								"destination": {
+									"fileName": "dboAddresses.csv"
+								}
+							},
+							{
+								"source": {
+									"table": "Customers"
+								},
+								"destination": {
+									"fileName": "dboCustomers.csv"
+								}
+							},
+							{
+								"source": {
+									"table": "OrderDetails"
+								},
+								"destination": {
+									"fileName": "dboOrderDetails.csv"
+								}
+							},
+							{
+								"source": {
+									"table": "Orders"
+								},
+								"destination": {
+									"fileName": "dboOrders.csv"
+								}
+							}
+						]
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2020-12-15T15:11:40Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceDataset_fkp')]",
+				"[concat(variables('factoryId'), '/datasets/DestinationDataset_fkp')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Pipeline_Copy_AzureSQLCloudStreamingToDataLake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEach_58o",
+						"type": "ForEach",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@pipeline().parameters.cw_items",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Copy_58o",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [
+										{
+											"name": "Source",
+											"value": "dbo.@{item().source.table}"
+										},
+										{
+											"name": "Destination",
+											"value": "bronze/AzureSQL/CloudStreaming/@{item().destination.fileName}"
+										}
+									],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"validateDataConsistency": false
+									},
+									"inputs": [
+										{
+											"referenceName": "SourceDataset_58o",
+											"type": "DatasetReference",
+											"parameters": {
+												"cw_table": "@item().source.table"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DestinationDataset_58o",
+											"type": "DatasetReference",
+											"parameters": {
+												"cw_fileName": "@item().destination.fileName"
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"parameters": {
+					"cw_items": {
+						"type": "Array",
+						"defaultValue": [
+							{
+								"source": {
+									"table": "Addresses"
+								},
+								"destination": {
+									"fileName": "dboAddresses.csv"
+								}
+							},
+							{
+								"source": {
+									"table": "Customers"
+								},
+								"destination": {
+									"fileName": "dboCustomers.csv"
+								}
+							},
+							{
+								"source": {
+									"table": "Transactions"
+								},
+								"destination": {
+									"fileName": "dboTransactions.csv"
+								}
+							}
+						]
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2020-12-15T15:26:22Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceDataset_58o')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Pipeline_Copy_CosmosDbToDataLake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy_xsh",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "movies"
+							},
+							{
+								"name": "Destination",
+								"value": "bronze/CosmosDB/movies.json"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "CosmosDbSqlApiSource",
+								"preferredRegions": []
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings",
+									"filePattern": "setOfObjects"
+								}
+							},
+							"enableStaging": false,
+							"validateDataConsistency": false
+						},
+						"inputs": [
+							{
+								"referenceName": "SourceDataset_xsh",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DestinationDataset_xsh",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2020-12-15T16:21:47Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceDataset_xsh')]",
+				"[concat(variables('factoryId'), '/datasets/DestinationDataset_xsh')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Dataflow_Customers')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_CloudSales_Customers",
+								"type": "DatasetReference"
+							},
+							"name": "CloudSalesCustomers"
+						},
+						{
+							"dataset": {
+								"referenceName": "Dataset_CloudStreaming_Customers",
+								"type": "DatasetReference"
+							},
+							"name": "CloudStreamingCustomers"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_Customers_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "Customers"
+						}
+					],
+					"transformations": [
+						{
+							"name": "UnionCustomers"
+						}
+					],
+					"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudSalesCustomers\nsource(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudStreamingCustomers\nCloudSalesCustomers, CloudStreamingCustomers union(byName: true)~> UnionCustomers\nUnionCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Customers"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Dataflow_DimCustomers')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_Customers_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetCustomersParquet"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_DimCustomers_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetDimCustomersParquet"
+						}
+					],
+					"transformations": [
+						{
+							"name": "UniqueCustomers"
+						},
+						{
+							"name": "DuplicateCustomersParquet"
+						},
+						{
+							"name": "JoinUniqueCustomers"
+						},
+						{
+							"name": "DeriveProcessDate"
+						},
+						{
+							"name": "SelectDimCustomers"
+						}
+					],
+					"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tCustomerID\n\t)) ~> DatasetCustomersParquet\nDatasetCustomersParquet aggregate(groupBy(CustomerID),\n\tDummyCount = count(1)) ~> UniqueCustomers\nDatasetCustomersParquet select(mapColumn(\n\t\tCustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateCustomersParquet\nUniqueCustomers, DuplicateCustomersParquet join(UniqueCustomers@CustomerID == DuplicateCustomersParquet@CustomerID,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinUniqueCustomers\nJoinUniqueCustomers derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDeriveProcessDate select(mapColumn(\n\t\tCustomerID = UniqueCustomers@CustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate,\n\t\tProcessDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectDimCustomers\nSelectDimCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimCustomersParquet"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Dataflow_DimMovieActors')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_Movies_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetMoviesParquet"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_DimActors_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetDimActorsParquet"
+						},
+						{
+							"dataset": {
+								"referenceName": "Dataset_FactMovieActors_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetFactMovieActorsParquet"
+						},
+						{
+							"dataset": {
+								"referenceName": "Dataset_DimMovies_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetDimMoviesParquet"
+						}
+					],
+					"transformations": [
+						{
+							"name": "UniqueActors"
+						},
+						{
+							"name": "DeriveActorID"
+						},
+						{
+							"name": "DimActors"
+						},
+						{
+							"name": "MovieActors"
+						},
+						{
+							"name": "JoinActorID"
+						},
+						{
+							"name": "RemoveActorName"
+						},
+						{
+							"name": "DeriveMovieActorsID"
+						},
+						{
+							"name": "DedupMovies"
+						},
+						{
+							"name": "RemoveActorandCatalogID"
+						}
+					],
+					"script": "source(output(\n\t\tActor as string,\n\t\tReleaseDate as date,\n\t\tGenre as string,\n\t\tRating as string,\n\t\tAvailabilityYear as integer,\n\t\tRuntime as short,\n\t\tAvailabilityDate as date,\n\t\tMovieTier as short,\n\t\tMovieTitle as string,\n\t\tMovieID as string,\n\t\tCatalogID as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t)) ~> DatasetMoviesParquet\nDatasetMoviesParquet aggregate(groupBy(Actor),\n\tDummyCount = count(1)) ~> UniqueActors\nUniqueActors derive(ActorID = uuid()) ~> DeriveActorID\nDeriveActorID select(mapColumn(\n\t\tActorName = Actor,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimActors\nDatasetMoviesParquet select(mapColumn(\n\t\tActor,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MovieActors\nMovieActors, DimActors join(Actor == ActorName,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinActorID\nJoinActorID select(mapColumn(\n\t\tMovieID,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorName\nRemoveActorName derive(MovieActorID = uuid()) ~> DeriveMovieActorsID\nRemoveActorandCatalogID aggregate(groupBy(MovieID),\n\teach(match(name!='MovieID'), $$ = max($$))) ~> DedupMovies\nDatasetMoviesParquet select(mapColumn(\n\t\tReleaseDate,\n\t\tGenre,\n\t\tRating,\n\t\tAvailabilityYear,\n\t\tRuntime,\n\t\tAvailabilityDate,\n\t\tMovieTier,\n\t\tMovieTitle,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorandCatalogID\nDimActors sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimActorsParquet\nDeriveMovieActorsID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactMovieActorsParquet\nDedupMovies sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimMoviesParquet"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Dataflow_DimTransactions')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_Orders_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetOrdersParquet"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_DimTransactions_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetDimTransactionsParquet"
+						},
+						{
+							"dataset": {
+								"referenceName": "Dataset_DimTransactionDetails_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetDimTransactionDetailsParquet"
+						},
+						{
+							"dataset": {
+								"referenceName": "Dataset_FactTransactionDetails_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "DatasetFactTransactionDetailsParquet"
+						}
+					],
+					"transformations": [
+						{
+							"name": "UniqueOrders"
+						},
+						{
+							"name": "DuplicateOrders"
+						},
+						{
+							"name": "DeriveProcessDate"
+						},
+						{
+							"name": "UniqueOrderDetails"
+						},
+						{
+							"name": "JoinOrderDetails"
+						},
+						{
+							"name": "DimTransactionDetails"
+						},
+						{
+							"name": "DeriveProcessDate2"
+						},
+						{
+							"name": "FactTransactionDetails"
+						},
+						{
+							"name": "DeriveID"
+						},
+						{
+							"name": "SelectTransactionColumns"
+						}
+					],
+					"script": "source(output(\n\t\tOrderID as string,\n\t\tCustomerID as string,\n\t\tOrderDate as string,\n\t\tShipDate as string,\n\t\tTotalCost as string,\n\t\tOrderDetailID as string,\n\t\tMovieID as string,\n\t\tQuantity as string,\n\t\tUnitCost as string,\n\t\tLineNumber as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('roundRobin', 5)) ~> DatasetOrdersParquet\nSelectTransactionColumns aggregate(groupBy(TransactionID),\n\teach(match(name!='TransactionID'), $$ = max($$))) ~> UniqueOrders\nDatasetOrdersParquet select(mapColumn(\n\t\tOrderID,\n\t\tCustomerID,\n\t\tOrderDate,\n\t\tShipDate,\n\t\tTotalCost,\n\t\tOrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateOrders\nUniqueOrders derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDatasetOrdersParquet aggregate(groupBy(OrderDetailID),\n\tDummyCount = count()) ~> UniqueOrderDetails\nUniqueOrderDetails, DuplicateOrders join(UniqueOrderDetails@OrderDetailID == DuplicateOrders@OrderDetailID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinOrderDetails\nJoinOrderDetails select(mapColumn(\n\t\tTransactionDetailID = UniqueOrderDetails@OrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimTransactionDetails\nDimTransactionDetails derive(ProcessDate = currentDate()) ~> DeriveProcessDate2\nDuplicateOrders select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tTransactionDetailID = OrderDetailID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> FactTransactionDetails\nFactTransactionDetails derive(ID = uuid()) ~> DeriveID\nDatasetOrdersParquet select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tCustomerID,\n\t\tTransactionDate = OrderDate,\n\t\tShipDate,\n\t\tTotalCost\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectTransactionColumns\nDeriveProcessDate sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionsParquet\nDeriveProcessDate2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionDetailsParquet\nDeriveID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactTransactionDetailsParquet"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Dataflow_Movies')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_Movies_JSON",
+								"type": "DatasetReference"
+							},
+							"name": "MoviesBronze"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_Movies_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "MoviesSilver"
+						}
+					],
+					"transformations": [
+						{
+							"name": "FlattenActors"
+						},
+						{
+							"name": "DeriveCatalogID"
+						}
+					],
+					"script": "source(output(\n\t\t{_attachments} as string,\n\t\t{_etag} as string,\n\t\t{_rid} as string,\n\t\t{_self} as string,\n\t\t{_ts} as integer,\n\t\tactors as (name as string)[],\n\t\tavailabilityDate as timestamp,\n\t\tgenre as string,\n\t\tid as string,\n\t\trating as string,\n\t\treleaseYear as short,\n\t\truntime as short,\n\t\tstreamingAvailabilityDate as timestamp,\n\t\ttier as short,\n\t\ttitle as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> MoviesBronze\nMoviesBronze foldDown(unroll(actors),\n\tmapColumn(\n\t\tActor = actors.name,\n\t\tReleaseDate = availabilityDate,\n\t\tGenre = genre,\n\t\tRating = rating,\n\t\tAvailabilityYear = releaseYear,\n\t\tRuntime = runtime,\n\t\tAvailabilityDate = streamingAvailabilityDate,\n\t\tMovieTier = tier,\n\t\tMovieTitle = title,\n\t\tMovieID = id\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenActors\nFlattenActors derive(CatalogID = uuid(),\n\t\tReleaseDate = toDate(ReleaseDate),\n\t\tAvailabilityYear = toInteger(AvailabilityYear),\n\t\tAvailabilityDate = toDate(AvailabilityDate)) ~> DeriveCatalogID\nDeriveCatalogID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MoviesSilver"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Dataflow_Orders')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_CloudSales_Orders",
+								"type": "DatasetReference"
+							},
+							"name": "CloudSalesOrders"
+						},
+						{
+							"dataset": {
+								"referenceName": "Dataset_CloudSales_OrderDetails",
+								"type": "DatasetReference"
+							},
+							"name": "CloudSalesOrderDetails"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Dataset_Orders_Parquet",
+								"type": "DatasetReference"
+							},
+							"name": "Orders"
+						}
+					],
+					"transformations": [
+						{
+							"name": "JoinOrders"
+						},
+						{
+							"name": "SelectOrders"
+						}
+					],
+					"script": "source(output(\n\t\tOrderID as string,\n\t\tCustomerID as string,\n\t\tOrderDate as string,\n\t\tShipDate as string,\n\t\tTotalCost as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 5,\n\t\tOrderID\n\t)) ~> CloudSalesOrders\nsource(output(\n\t\tOrderDetailID as string,\n\t\tOrderID as string,\n\t\tMovieID as string,\n\t\tQuantity as string,\n\t\tUnitCost as string,\n\t\tLineNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 5,\n\t\tOrderID\n\t)) ~> CloudSalesOrderDetails\nCloudSalesOrders, CloudSalesOrderDetails join(CloudSalesOrders@OrderID == CloudSalesOrderDetails@OrderID,\n\tjoinType:'right',\n\tbroadcast: 'auto')~> JoinOrders\nJoinOrders select(mapColumn(\n\t\tOrderID = CloudSalesOrders@OrderID,\n\t\tCustomerID,\n\t\tOrderDate,\n\t\tShipDate,\n\t\tTotalCost,\n\t\tOrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectOrders\nSelectOrders sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Orders"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Pipeline_Dataflow_DW')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Dataflow_DimCustomers",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow_DimCustomers",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"DatasetCustomersParquet": {},
+									"DatasetDimCustomersParquet": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Dataflow_DimMovieActors",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow_DimMovieActors",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"DatasetMoviesParquet": {},
+									"DatasetDimActorsParquet": {},
+									"DatasetFactMovieActorsParquet": {},
+									"DatasetDimMoviesParquet": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Dataflow_DimTransactions",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow_DimTransactions",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"DatasetOrdersParquet": {},
+									"DatasetDimTransactionsParquet": {},
+									"DatasetDimTransactionDetailsParquet": {},
+									"DatasetFactTransactionDetailsParquet": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2020-12-18T16:55:22Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Dataflow_DimCustomers')]",
+				"[concat(variables('factoryId'), '/dataflows/Dataflow_DimMovieActors')]",
+				"[concat(variables('factoryId'), '/dataflows/Dataflow_DimTransactions')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Pipeline_Dataflow_Ingest')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Dataflow_Customers",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow_Customers",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"CloudSalesCustomers": {},
+									"CloudStreamingCustomers": {},
+									"Customers": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Coarse"
+						}
+					},
+					{
+						"name": "Dataflow_Orders",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow_Orders",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"CloudSalesOrders": {},
+									"CloudSalesOrderDetails": {},
+									"Orders": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Dataflow_Movies",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow_Movies",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"MoviesBronze": {},
+									"MoviesSilver": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2020-12-18T17:11:25Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Dataflow_Customers')]",
+				"[concat(variables('factoryId'), '/dataflows/Dataflow_Orders')]",
+				"[concat(variables('factoryId'), '/dataflows/Dataflow_Movies')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Pipeline_Test')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Dataflow_Customers",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow_Customers",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"CloudSalesCustomers": {},
+									"CloudStreamingCustomers": {},
+									"Customers": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Coarse"
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/Dataflow_Customers')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Pipeline_Dataflow')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Pipeline_Dataflow_Ingest",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Pipeline_Dataflow_Ingest",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Pipeline_Dataflow_DW",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Pipeline_Dataflow_Ingest",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Pipeline_Dataflow_DW",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2020-12-18T17:12:10Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Pipeline_Dataflow_Ingest')]",
+				"[concat(variables('factoryId'), '/pipelines/Pipeline_Dataflow_DW')]"
+			]
+		}
+	]
+}
