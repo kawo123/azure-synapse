@@ -1,0 +1,16 @@
+{
+	"name": "Demo 01 -- 02 Query Movies",
+	"properties": {
+		"content": {
+			"query": "USE [Demo];\nGO\n\n\nSELECT \n\tv.Name\n    , v.Type_desc\n    , v.Create_date\nFROM \n\tsys.views as v;\nGO\n\n\n-- Get top selling movies in quantities\nWITH top_movie_ids AS \n(\n    SELECT \n        TOP 10 DTD.MovieID\n        , SUM( CAST(Quantity AS INT) ) AS Quantity\n    FROM\n        factTransactionDetailsVw AS [FTD]\n    INNER JOIN \n        dimTransactionDetailsVw AS [DTD]\n        ON (FTD.TransactionDetailID = DTD.TransactionDetailID)\n    GROUP BY DTD.MovieID\n    ORDER BY Quantity DESC\n)\nSELECT\n    t.MovieID\n    , DM.MovieTitle\n    , MAX( t.Quantity ) AS Quantity\nFROM top_movie_ids t\nINNER JOIN \n    dimMoviesVw AS [DM]\n    ON (t.MovieID = DM.MovieID)\nGROUP BY t.MovieID, DM.MovieTitle\nORDER BY Quantity DESC\n;\n\n\n-- Get top selling movies in revenue\nWITH top_movie_ids AS \n(\n    SELECT \n        TOP 10 DTD.MovieID\n        , SUM( CAST(DTD.Quantity AS FLOAT) * DTD.UnitCost ) AS TotalRevenue\n    FROM\n        dimTransactionDetailsVw AS [DTD]\n    GROUP BY DTD.MovieID\n    ORDER BY TotalRevenue DESC\n)\nSELECT\n    t.MovieID\n    , DM.MovieTitle\n    , MAX( t.TotalRevenue ) AS TotalRevenue\nFROM top_movie_ids t\nINNER JOIN \n    dimMoviesVw AS [DM]\n    ON (t.MovieID = DM.MovieID)\nGROUP BY t.MovieID, DM.MovieTitle\nORDER BY TotalRevenue DESC\n;\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "Demo",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

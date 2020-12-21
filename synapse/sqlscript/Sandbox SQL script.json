@@ -1,0 +1,16 @@
+{
+	"name": "Sandbox SQL script",
+	"properties": {
+		"content": {
+			"query": "USE [Demo];\nGO\n\nSELECT \n    *\nFROM dimTransactionDetailsVw\n;\n\nSELECT\n    TransactionDetailID\n    , MovieID\n    , CAST( Quantity AS INT ) AS Quantity\n    , ROUND( CAST( UnitCost AS FLOAT ), 2 ) AS UnitCost\n    , CAST( LineNumber AS INT ) AS LineNumber\n    , CAST( ProcessDate AS Date ) AS ProcessDate\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/DimTransactionDetails.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "Demo",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}

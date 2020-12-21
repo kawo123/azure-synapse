@@ -1,0 +1,16 @@
+{
+	"name": "Demo 01 -- 01 Create Movie POS Views",
+	"properties": {
+		"content": {
+			"query": "-- Drop database if it exists\nDROP DATABASE IF EXISTS Demo\nGO\n\n\n-- Create new database\nCREATE DATABASE [Demo];\nGO\n\n\nUSE [Demo];\nGO\n\n----\n-- Create views for dimension and fact tables\n----\n\nDROP VIEW IF EXISTS dimActorsVw;\nGO\n\nCREATE VIEW dimActorsVw AS\nSELECT\n    *\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/DimActors.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n\n\nDROP VIEW IF EXISTS dimMoviesVw;\nGO\n\nCREATE VIEW dimMoviesVw AS\nSELECT\n    MovieID\n    , MovieTitle\n    , CAST( ReleaseDate AS Date ) AS ReleaseDate\n    , Genre\n    , Rating\n    , CAST( AvailabilityYear AS VARCHAR ) AS AvailabilityYear\n    , CAST( Runtime AS INT ) AS Runtime\n    , CAST( AvailabilityDate AS VARCHAR ) AS AvailabilityDate\n    , CAST( MovieTier AS INT ) AS MovieTier\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/DimMovies.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n\n\n\nDROP VIEW IF EXISTS factMovieActorsVw;\nGO\n\nCREATE VIEW factMovieActorsVw AS\nSELECT\n    *\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/FactMovieActors.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n\n\nDROP VIEW IF EXISTS dimCustomersVw;\nGO\n\nCREATE VIEW dimCustomersVw AS\nSELECT\n    *\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/DimCustomers.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n\n\nDROP VIEW IF EXISTS dimTransactionsVw;\nGO\n\nCREATE VIEW dimTransactionsVw AS\nSELECT\n    TransactionID\n    , CustomerID\n    , CAST( TransactionDate AS Date ) AS TransactionDate\n    , CAST( ShipDate AS Date ) AS ShipDate\n    , CAST( ProcessDate AS Date ) AS ProcessDate\n    , ROUND( CAST( TotalCost AS FLOAT ), 2 )  AS TotalCost\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/DimTransactions.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n\n\nDROP VIEW IF EXISTS dimTransactionDetailsVw;\nGO\n\nCREATE VIEW dimTransactionDetailsVw AS\nSELECT\n    TransactionDetailID\n    , MovieID\n    , CAST( Quantity AS INT ) AS Quantity\n    , ROUND( CAST( UnitCost AS FLOAT ), 2 ) AS UnitCost\n    , CAST( LineNumber AS INT ) AS LineNumber\n    , CAST( ProcessDate AS Date ) AS ProcessDate\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/DimTransactionDetails.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n\nDROP VIEW IF EXISTS factTransactionDetailsVw;\nGO\n\nCREATE VIEW factTransactionDetailsVw AS\nSELECT\n    *\nFROM\n    OPENROWSET(\n      BULK 'https://synapsedatalakeg2.blob.core.windows.net/gold/FactTransactionDetails.parquet/*.parquet',\n      FORMAT='PARQUET'\n    ) AS [FTD];\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"name": "master",
+				"type": "SqlOnDemand"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}
