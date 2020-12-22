@@ -1,0 +1,35 @@
+{
+	"name": "Dataflow_Movies",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_Movies_JSON",
+						"type": "DatasetReference"
+					},
+					"name": "MoviesBronze"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_Movies_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "MoviesSilver"
+				}
+			],
+			"transformations": [
+				{
+					"name": "FlattenActors"
+				},
+				{
+					"name": "DeriveCatalogID"
+				}
+			],
+			"script": "source(output(\n\t\t{_attachments} as string,\n\t\t{_etag} as string,\n\t\t{_rid} as string,\n\t\t{_self} as string,\n\t\t{_ts} as integer,\n\t\tactors as (name as string)[],\n\t\tavailabilityDate as timestamp,\n\t\tgenre as string,\n\t\tid as string,\n\t\trating as string,\n\t\treleaseYear as short,\n\t\truntime as short,\n\t\tstreamingAvailabilityDate as timestamp,\n\t\ttier as short,\n\t\ttitle as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> MoviesBronze\nMoviesBronze foldDown(unroll(actors),\n\tmapColumn(\n\t\tActor = actors.name,\n\t\tReleaseDate = availabilityDate,\n\t\tGenre = genre,\n\t\tRating = rating,\n\t\tAvailabilityYear = releaseYear,\n\t\tRuntime = runtime,\n\t\tAvailabilityDate = streamingAvailabilityDate,\n\t\tMovieTier = tier,\n\t\tMovieTitle = title,\n\t\tMovieID = id\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenActors\nFlattenActors derive(CatalogID = uuid(),\n\t\tReleaseDate = toDate(ReleaseDate),\n\t\tAvailabilityYear = toInteger(AvailabilityYear),\n\t\tAvailabilityDate = toDate(AvailabilityDate)) ~> DeriveCatalogID\nDeriveCatalogID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MoviesSilver"
+		}
+	}
+}
