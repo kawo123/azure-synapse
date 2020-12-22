@@ -10,16 +10,25 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: AzureResourceManagerTemplateDeployment@3
+# - task: AzureResourceManagerTemplateDeployment@3
+#   inputs:
+#     deploymentScope: 'Resource Group'
+#     azureResourceManagerConnection: 'AzureServiceConnection'
+#     subscriptionId: '7c9d382c-5964-48db-9cf6-c595c7ba4339'
+#     action: 'Create Or Update Resource Group'
+#     resourceGroupName: 'synapse-prd-rg'
+#     location: 'East US'
+#     templateLocation: 'Linked artifact'
+#     csmFile: '$(System.DefaultWorkingDirectory)/arm/synapse.json'
+#     csmParametersFile: '$(System.DefaultWorkingDirectory)/arm/synapse.parameters.json'
+#     deploymentMode: 'Incremental'
+#     deploymentName: 'synapse-ci-cd-deployment'
+
+- task: Synapse workspace deployment@0
   inputs:
-    deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'AzureServiceConnection'
-    subscriptionId: '7c9d382c-5964-48db-9cf6-c595c7ba4339'
-    action: 'Create Or Update Resource Group'
-    resourceGroupName: 'synapse-prd-rg'
-    location: 'East US'
-    templateLocation: 'Linked artifact'
-    csmFile: '$(System.DefaultWorkingDirectory)/arm/synapse.json'
-    csmParametersFile: '$(System.DefaultWorkingDirectory)/arm/synapse.parameters.json'
-    deploymentMode: 'Incremental'
-    deploymentName: 'synapse-ci-cd-deployment'
+    TemplateFile: '$(System.DefaultWorkingDirectory)/synapse-syn/TemplateForWorkspace.json'
+    ParametersFile: '$(System.DefaultWorkingDirectory)/synapse-syn/TemplateParametersForWorkspace.json'
+    azureSubscription: 'AzureServiceConnection'
+    ResourceGroupName: 'synapse-prd-rg'
+    TargetWorkspaceName: 'synapse-prd-syn'
+    Environment: 'prod'
