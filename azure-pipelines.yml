@@ -10,10 +10,16 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: AzureResourceManagerTemplateDeployment@3
+  inputs:
+    deploymentScope: 'Resource Group'
+    azureResourceManagerConnection: 'AzureServiceConnection'
+    subscriptionId: '7c9d382c-5964-48db-9cf6-c595c7ba4339'
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: 'synapse-prd-rg'
+    location: 'East US'
+    templateLocation: 'Linked artifact'
+    csmFile: '$(System.DefaultWorkingDirectory	)/synapse-syn/TemplateForWorkspace.json'
+    csmParametersFile: '$(System.DefaultWorkingDirectory	)/synapse-syn/TemplateParametersForWorkspace.json'
+    deploymentMode: 'Incremental'
+    deploymentName: 'synapse-ci-cd-deployment'
