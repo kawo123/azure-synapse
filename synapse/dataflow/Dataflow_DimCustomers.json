@@ -1,0 +1,44 @@
+{
+	"name": "Dataflow_DimCustomers",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_Customers_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetCustomersParquet"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_DimCustomers_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "DatasetDimCustomersParquet"
+				}
+			],
+			"transformations": [
+				{
+					"name": "UniqueCustomers"
+				},
+				{
+					"name": "DuplicateCustomersParquet"
+				},
+				{
+					"name": "JoinUniqueCustomers"
+				},
+				{
+					"name": "DeriveProcessDate"
+				},
+				{
+					"name": "SelectDimCustomers"
+				}
+			],
+			"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tCustomerID\n\t)) ~> DatasetCustomersParquet\nDatasetCustomersParquet aggregate(groupBy(CustomerID),\n\tDummyCount = count(1)) ~> UniqueCustomers\nDatasetCustomersParquet select(mapColumn(\n\t\tCustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateCustomersParquet\nUniqueCustomers, DuplicateCustomersParquet join(UniqueCustomers@CustomerID == DuplicateCustomersParquet@CustomerID,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinUniqueCustomers\nJoinUniqueCustomers derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDeriveProcessDate select(mapColumn(\n\t\tCustomerID = UniqueCustomers@CustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate,\n\t\tProcessDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectDimCustomers\nSelectDimCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimCustomersParquet"
+		}
+	}
+}

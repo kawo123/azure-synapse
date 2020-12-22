@@ -1,0 +1,39 @@
+{
+	"name": "Dataflow_Customers",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_CloudSales_Customers",
+						"type": "DatasetReference"
+					},
+					"name": "CloudSalesCustomers"
+				},
+				{
+					"dataset": {
+						"referenceName": "Dataset_CloudStreaming_Customers",
+						"type": "DatasetReference"
+					},
+					"name": "CloudStreamingCustomers"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_Customers_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "Customers"
+				}
+			],
+			"transformations": [
+				{
+					"name": "UnionCustomers"
+				}
+			],
+			"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudSalesCustomers\nsource(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudStreamingCustomers\nCloudSalesCustomers, CloudStreamingCustomers union(byName: true)~> UnionCustomers\nUnionCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Customers"
+		}
+	}
+}
