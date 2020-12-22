@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "synapse_workspace_name": {
+      "defaultValue": "synapse-syn",
+      "type": "string"
+    }
+  },
+  "variables": {
+    "unique_synapse_name": "[concat(parameters('synapse_workspace_name'), resourceGroup().id)]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Synapse/workspaces",
+      "apiVersion": "2019-06-01-preview",
+      "name": "[variables('unique_synapse_name')]",
+      "location": "eastus",
+      "properties": {
+        "defaultDataLakeStorage": {
+          "accountUrl": "https://synapsedatalakeg2.dfs.core.windows.net",
+          "filesystem": "synapse"
+        },
+        "sqlAdministratorLogin": "sqladminuser"
+      }
+    }
+  ]
+}
