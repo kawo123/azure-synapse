@@ -9,6 +9,9 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+variables:
+- group: AzureSynapseSecrets
+
 steps:
 # - task: AzureResourceManagerTemplateDeployment@3
 #   inputs:
@@ -32,3 +35,4 @@ steps:
     ResourceGroupName: 'synapse-prd-rg'
     TargetWorkspaceName: 'synapse-prd-syn'
     Environment: 'prod'
+    OverrideArmParameters: '-workspaceName synapse-prd-syn -AzureDataLakeStorage_accountKey $(AzureDataLakeStorageAccountKey) -AzureSqlDbCloudSales_connectionString $(AzureSqlDbCloudSalesConnectionString) -AzureSqlDbCloudStreaming_connectionString $(AzureSqlDbCloudStreamingConnectionString) -CosmosDb_connectionString $(CosmosDbConnectionString) -synapse-syn-WorkspaceDefaultSqlServer_connectionString $(SynapseWorkspaceDefaultSqlServerConnectionString)'
