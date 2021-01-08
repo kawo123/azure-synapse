@@ -1,0 +1,26 @@
+{
+	"name": "AzureMLService",
+	"properties": {
+		"annotations": [],
+		"type": "AzureMLService",
+		"typeProperties": {
+			"subscriptionId": "7c9d382c-5964-48db-9cf6-c595c7ba4339",
+			"resourceGroupName": "synapse-rg",
+			"mlWorkspaceName": "synapse-aml",
+			"servicePrincipalId": "3e56532b-419a-4885-b743-4fe686fb0efe",
+			"servicePrincipalKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "AzureKeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "AzureSynapseAmlAppSecret"
+			},
+			"tenant": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+		},
+		"connectVia": {
+			"referenceName": "AutoResolveIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
