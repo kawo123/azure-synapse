@@ -52,7 +52,13 @@
 					"microsoft": {
 						"language": "python"
 					},
-					"collapsed": false
+					"jupyter": {
+						"outputs_hidden": true
+					},
+					"collapsed": false,
+					"tags": [
+						"parameters"
+					]
 				},
 				"source": [
 					"%%pyspark\r\n",
@@ -61,7 +67,7 @@
 					"    format='parquet'\r\n",
 					")"
 				],
-				"execution_count": 30
+				"execution_count": null
 			},
 			{
 				"cell_type": "code",
@@ -87,7 +93,7 @@
 					"    .withColumnRenamed(\"sum(TotalCost)\", \"Revenue\") \\\r\n",
 					"    .withColumnRenamed(\"TransactionDate\", \"Date\")"
 				],
-				"execution_count": 41
+				"execution_count": null
 			},
 			{
 				"cell_type": "code",
@@ -105,25 +111,6 @@
 				},
 				"source": [
 					"df.write.mode(\"overwrite\").saveAsTable(\"default.DailyRevenue\")"
-				],
-				"execution_count": 42
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					},
-					"collapsed": true
-				},
-				"source": [
-					""
 				],
 				"execution_count": null
 			}
