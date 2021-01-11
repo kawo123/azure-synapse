@@ -31,6 +31,26 @@
 			"type": "string",
 			"defaultValue": "https://synapsedatalakeg2.dfs.core.windows.net"
 		},
+		"AzureKeyVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://synapse-keyv.vault.azure.net/"
+		},
+		"AzureMLService_properties_typeProperties_subscriptionId": {
+			"type": "string",
+			"defaultValue": "7c9d382c-5964-48db-9cf6-c595c7ba4339"
+		},
+		"AzureMLService_properties_typeProperties_resourceGroupName": {
+			"type": "string",
+			"defaultValue": "synapse-rg"
+		},
+		"AzureMLService_properties_typeProperties_servicePrincipalId": {
+			"type": "string",
+			"defaultValue": "3e56532b-419a-4885-b743-4fe686fb0efe"
+		},
+		"AzureMLService_properties_typeProperties_tenant": {
+			"type": "string",
+			"defaultValue": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+		},
 		"synapse-syn-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://synapsedatalakeg2.dfs.core.windows.net"
@@ -1467,6 +1487,51 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/AzureKeyVault')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('AzureKeyVault_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureMLService')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureMLService",
+				"typeProperties": {
+					"subscriptionId": "[parameters('AzureMLService_properties_typeProperties_subscriptionId')]",
+					"resourceGroupName": "[parameters('AzureMLService_properties_typeProperties_resourceGroupName')]",
+					"mlWorkspaceName": "synapse-aml",
+					"servicePrincipalId": "[parameters('AzureMLService_properties_typeProperties_servicePrincipalId')]",
+					"servicePrincipalKey": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "AzureKeyVault",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "AzureSynapseAmlAppSecret"
+					},
+					"tenant": "[parameters('AzureMLService_properties_typeProperties_tenant')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('workspaceId'), '/linkedServices/AzureKeyVault')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/AzureSqlDbCloudSales')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -2009,6 +2074,313 @@
 					}
 				},
 				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 01 Daily Revenue')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "SparkPool01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/7c9d382c-5964-48db-9cf6-c595c7ba4339/resourceGroups/synapse-rg/providers/Microsoft.Synapse/workspaces/synapse-syn/bigDataPools/SparkPool01",
+						"name": "SparkPool01",
+						"type": "Spark",
+						"endpoint": "https://synapse-syn.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56
+					}
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							},
+							"jupyter": {
+								"outputs_hidden": true
+							},
+							"collapsed": false,
+							"tags": [
+								"parameters"
+							]
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load(\r\n",
+							"    'abfss://gold@synapsedatalakeg2.dfs.core.windows.net/DimTransactions.parquet/*.snappy.parquet', \r\n",
+							"    format='parquet'\r\n",
+							")"
+						],
+						"outputs": [],
+						"execution_count": null
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": true
+						},
+						"source": [
+							"from pyspark.sql.functions import col\r\n",
+							"\r\n",
+							"df = df.withColumn(\"TotalCost\", col(\"TotalCost\").cast(\"double\"))\r\n",
+							"\r\n",
+							"df = df.groupBy(\"TransactionDate\") \\\r\n",
+							"    .sum(\"TotalCost\") \\\r\n",
+							"    .withColumnRenamed(\"sum(TotalCost)\", \"Revenue\") \\\r\n",
+							"    .withColumnRenamed(\"TransactionDate\", \"Date\")"
+						],
+						"outputs": [],
+						"execution_count": null
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": true
+						},
+						"source": [
+							"df.write.mode(\"overwrite\").saveAsTable(\"default.DailyRevenue\")"
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 02 Anomaly Detection')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "SparkPool01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/7c9d382c-5964-48db-9cf6-c595c7ba4339/resourceGroups/synapse-rg/providers/Microsoft.Synapse/workspaces/synapse-syn/bigDataPools/SparkPool01",
+						"name": "SparkPool01",
+						"type": "Spark",
+						"endpoint": "https://synapse-syn.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"extraHeader": {},
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"import mmlspark\n",
+							"\n",
+							"if mmlspark.__spark_package_version__ < \"1.0.0-rc3\":\n",
+							"    raise Exception(\"This notebook is not compatible with the current version of mmlspark: {}. Please upgrade to 1.0.0-rc3 or higher.\".format(\n",
+							"        mmlspark.__spark_package_version__))"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": true
+						},
+						"source": [
+							"from mmlspark.cognitive import *\r\n",
+							"from notebookutils import mssparkutils\r\n",
+							"\r\n",
+							"# Fetch the subscription key (or a general Cognitive Service key) from Azure Key Vault\r\n",
+							"service_key = mssparkutils.credentials.getSecret(\"synapse-keyv\", \"AnomalyDetectorKey\", \"AzureKeyVault\")"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": false
+						},
+						"source": [
+							"from mmlspark.cognitive import *\r\n",
+							"from notebookutils import mssparkutils\r\n",
+							"from pyspark.sql.functions import lit\r\n",
+							"\r\n",
+							"# Fetch the subscription key (or a general Cognitive Service key) from Azure Key Vault\r\n",
+							"service_key = mssparkutils.credentials.getSecret(\"synapse-keyv\", \"AnomalyDetectorKey\", \"AzureKeyVault\")\r\n",
+							"\r\n",
+							"# Load the data into a Spark DataFrame\r\n",
+							"df = spark.sql(\"SELECT * FROM default.dailyrevenue\") \\\r\n",
+							"    .withColumn(\"group\", lit(\"series1\"))\r\n",
+							"\r\n",
+							"anomalyDetector = (SimpleDetectAnomalies()\r\n",
+							"    .setLocation(\"eastus\")\r\n",
+							"    .setSubscriptionKey(service_key)\r\n",
+							"    .setOutputCol(\"output\")\r\n",
+							"    .setErrorCol(\"error\")\r\n",
+							"    .setGranularity(\"daily\")\r\n",
+							"    .setTimestampCol(\"Date\")\r\n",
+							"    .setValueCol(\"Revenue\")\r\n",
+							"    .setGroupbyCol(\"group\")\r\n",
+							")\r\n",
+							"\r\n",
+							"results = anomalyDetector.transform(df)\r\n",
+							"\r\n",
+							"# Show the results\r\n",
+							"display(results.select(\"Date\", \"Revenue\", \"Date\", \"output.*\", \"error\"))"
+						],
+						"outputs": [],
+						"execution_count": 9
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"from mmlspark.cognitive import *\n",
+							"from notebookutils import mssparkutils\n",
+							"\n",
+							"# Fetch the subscription key (or a general Cognitive Service key) from Azure Key Vault\n",
+							"service_key = 'cfddb4355d5345f49611324ba1a4cb37'\n",
+							"\n",
+							"# Load the data into a Spark DataFrame\n",
+							"df = spark.sql(\"SELECT * FROM default.dailyrevenue\")\n",
+							"\n",
+							"anomalyDetector = (SimpleDetectAnomalies()\n",
+							"    .setLocation(\"eastus\")\n",
+							"    .setSubscriptionKey(service_key)\n",
+							"    .setOutputCol(\"output\")\n",
+							"    .setErrorCol(\"error\")\n",
+							"    .setGranularity(\"daily\")\n",
+							"    .setTimestampCol(\"Date\")\n",
+							"    .setValueCol(\"Revenue\")\n",
+							")\n",
+							"\n",
+							"results = anomalyDetector.transform(df)\n",
+							"\n",
+							"# Show the results\n",
+							"display(results.select(\"Date\", \"Revenue\", \"Date\", \"output.*\", \"error\").limit(10))"
+						],
+						"outputs": [],
+						"execution_count": 7
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": true
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
 			},
 			"dependsOn": []
 		}

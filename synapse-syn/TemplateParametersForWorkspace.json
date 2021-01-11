@@ -23,6 +23,21 @@
 		"AzureDataLakeStorage_properties_typeProperties_url": {
 			"value": "https://synapsedatalakeg2.dfs.core.windows.net"
 		},
+		"AzureKeyVault_properties_typeProperties_baseUrl": {
+			"value": "https://synapse-keyv.vault.azure.net/"
+		},
+		"AzureMLService_properties_typeProperties_subscriptionId": {
+			"value": "7c9d382c-5964-48db-9cf6-c595c7ba4339"
+		},
+		"AzureMLService_properties_typeProperties_resourceGroupName": {
+			"value": "synapse-rg"
+		},
+		"AzureMLService_properties_typeProperties_servicePrincipalId": {
+			"value": "3e56532b-419a-4885-b743-4fe686fb0efe"
+		},
+		"AzureMLService_properties_typeProperties_tenant": {
+			"value": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+		},
 		"synapse-syn-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"value": "https://synapsedatalakeg2.dfs.core.windows.net"
 		}
