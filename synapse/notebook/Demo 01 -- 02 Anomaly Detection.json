@@ -78,7 +78,7 @@
 					"# Fetch the subscription key (or a general Cognitive Service key) from Azure Key Vault\r\n",
 					"service_key = mssparkutils.credentials.getSecret(\"synapse-keyv\", \"AnomalyDetectorKey\", \"AzureKeyVault\")"
 				],
-				"execution_count": 6
+				"execution_count": 2
 			},
 			{
 				"cell_type": "code",
