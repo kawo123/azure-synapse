@@ -2012,8 +2012,8 @@
 						"language": "sql"
 					},
 					"currentConnection": {
-						"name": "master",
-						"type": "SqlOnDemand"
+						"poolName": "Built-in",
+						"databaseName": "master"
 					}
 				},
 				"type": "SqlQuery"
@@ -2033,6 +2033,44 @@
 					"currentConnection": {
 						"name": "Demo",
 						"type": "SqlOnDemand"
+					}
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 03 Create External Tables')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\n-- -- This creates an external file format for CSV file with a single header row.\n-- CREATE EXTERNAL FILE FORMAT skipHeader_CSV\n-- WITH (FORMAT_TYPE = DELIMITEDTEXT,\n--       FORMAT_OPTIONS(\n--           FIELD_TERMINATOR = ',',\n--           STRING_DELIMITER = '\"',\n--           FIRST_ROW = 2, \n--           USE_TYPE_DEFAULT = True)\n-- )\n\n-- -- This creates an external file format for a JSON file that compresses the data with the org.apache.io.compress.SnappyCodec data compression method. \n-- -- This applies to Azure SQL Edge ONLY and is currently not supported for other SQL products.\n-- CREATE EXTERNAL FILE FORMAT jsonFileFormat  \n-- WITH (  \n--     FORMAT_TYPE = JSON,  \n--     DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n-- );  \n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE DimActor (\n\t[ActorName] varchar(8000),\n\t[ActorID] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'DimActors.parquet/*.parquet',\n\tDATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM DimActor\nGO\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "Demo"
+					}
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 04 CETAS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE TopMovies\nWITH (\n    LOCATION = 'TopMovies.parquet/',\n    DATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n    FILE_FORMAT = [SynapseParquetFormat]\n)\nAS\nWITH top_movie_ids AS \n(\n    SELECT \n        TOP 10 DTD.MovieID\n        , SUM( CAST(Quantity AS INT) ) AS Quantity\n    FROM\n        factTransactionDetailsVw AS [FTD]\n    INNER JOIN \n        dimTransactionDetailsVw AS [DTD]\n        ON (FTD.TransactionDetailID = DTD.TransactionDetailID)\n    GROUP BY DTD.MovieID\n    ORDER BY Quantity DESC\n)\nSELECT\n    t.MovieID\n    , DM.MovieTitle\n    , MAX( t.Quantity ) AS Quantity\nFROM top_movie_ids t\nINNER JOIN \n    dimMoviesVw AS [DM]\n    ON (t.MovieID = DM.MovieID)\nGROUP BY t.MovieID, DM.MovieTitle\nORDER BY Quantity DESC\n;\nGO\n\nSELECT * FROM TopMovies\nGO\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "Demo"
 					}
 				},
 				"type": "SqlQuery"
@@ -2244,16 +2282,12 @@
 						"sparkVersion": "2.4",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"extraHeader": {},
-						"automaticScaleJobs": false
-					},
-					"sessionKeepAliveTimeout": 30
+						"memory": 56
+					}
 				},
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"import mmlspark\n",
 							"\n",
@@ -2334,6 +2368,25 @@
 						"execution_count": null
 					}
 				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 05 Stored Procedures')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [Demo];\nGO\n\nCREATE PROCEDURE drop_external_table_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_tables WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL TABLE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_file_format_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_file_formats WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL FILE FORMAT ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_data_source_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_data_sources WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL DATA SOURCE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\n-- EXEC drop_external_table_if_exists 'mytest';\n-- EXEC drop_external_file_format_if_exists 'mytest';\n-- EXEC drop_external_data_source_if_exists 'mytest';\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "Demo"
+					}
+				},
+				"type": "SqlQuery"
 			},
 			"dependsOn": []
 		}
