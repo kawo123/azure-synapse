@@ -1,0 +1,16 @@
+{
+	"name": "Demo 01 -- 05 Stored Procedures",
+	"properties": {
+		"content": {
+			"query": "USE [Demo];\nGO\n\nCREATE PROCEDURE drop_external_table_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_tables WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL TABLE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_file_format_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_file_formats WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL FILE FORMAT ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_data_source_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_data_sources WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL DATA SOURCE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\n-- EXEC drop_external_table_if_exists 'mytest';\n-- EXEC drop_external_file_format_if_exists 'mytest';\n-- EXEC drop_external_data_source_if_exists 'mytest';\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"poolName": "Built-in",
+				"databaseName": "Demo"
+			}
+		},
+		"type": "SqlQuery"
+	}
+}
