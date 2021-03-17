@@ -2,14 +2,15 @@
 	"name": "Demo 01 -- 04 CETAS",
 	"properties": {
 		"content": {
-			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE TopMovies\nWITH (\n    LOCATION = 'TopMovies.parquet/',\n    DATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n    FILE_FORMAT = [SynapseParquetFormat]\n)\nAS\nWITH top_movie_ids AS \n(\n    SELECT \n        TOP 10 DTD.MovieID\n        , SUM( CAST(Quantity AS INT) ) AS Quantity\n    FROM\n        factTransactionDetailsVw AS [FTD]\n    INNER JOIN \n        dimTransactionDetailsVw AS [DTD]\n        ON (FTD.TransactionDetailID = DTD.TransactionDetailID)\n    GROUP BY DTD.MovieID\n    ORDER BY Quantity DESC\n)\nSELECT\n    t.MovieID\n    , DM.MovieTitle\n    , MAX( t.Quantity ) AS Quantity\nFROM top_movie_ids t\nINNER JOIN \n    dimMoviesVw AS [DM]\n    ON (t.MovieID = DM.MovieID)\nGROUP BY t.MovieID, DM.MovieTitle\nORDER BY Quantity DESC\n;\nGO\n\nSELECT * FROM TopMovies\nGO\n\n",
+			"query": "-- Create external file format for Parquet\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\n-- Create external data source for data lake\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\n-- CETAS (Create external table as select) to write to data lake\nCREATE EXTERNAL TABLE TopMovies\nWITH (\n    LOCATION = 'TopMovies.parquet/',\n    DATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n    FILE_FORMAT = [SynapseParquetFormat]\n)\nAS\nWITH top_movie_ids AS \n(\n    SELECT \n        TOP 10 DTD.MovieID\n        , SUM( CAST(Quantity AS INT) ) AS Quantity\n    FROM\n        factTransactionDetailsVw AS [FTD]\n    INNER JOIN \n        dimTransactionDetailsVw AS [DTD]\n        ON (FTD.TransactionDetailID = DTD.TransactionDetailID)\n    GROUP BY DTD.MovieID\n    ORDER BY Quantity DESC\n)\nSELECT\n    t.MovieID\n    , DM.MovieTitle\n    , MAX( t.Quantity ) AS Quantity\nFROM top_movie_ids t\nINNER JOIN \n    dimMoviesVw AS [DM]\n    ON (t.MovieID = DM.MovieID)\nGROUP BY t.MovieID, DM.MovieTitle\nORDER BY Quantity DESC\n;\nGO\n\nSELECT * FROM TopMovies\nGO\n\n--DROP EXTERNAL TABLE TopMovies;\n--GO",
 			"metadata": {
 				"language": "sql"
 			},
 			"currentConnection": {
 				"poolName": "Built-in",
 				"databaseName": "Demo"
-			}
+			},
+			"resultLimit": 5000
 		},
 		"type": "SqlQuery"
 	}
