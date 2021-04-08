@@ -19,6 +19,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureSqlDbCloudStreaming'"
 		},
+		"AzureSynapseSQLServerless_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureSynapseSQLServerless'"
+		},
 		"CosmosDb_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'CosmosDb'"
@@ -1558,6 +1562,25 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/AzureSynapseSQLServerless')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureSynapseSQLServerless_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/CosmosDb')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -2014,7 +2037,8 @@
 					"currentConnection": {
 						"poolName": "Built-in",
 						"databaseName": "master"
-					}
+					},
+					"resultLimit": 5000
 				},
 				"type": "SqlQuery"
 			},
@@ -2064,7 +2088,27 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE TopMovies\nWITH (\n    LOCATION = 'TopMovies.parquet/',\n    DATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n    FILE_FORMAT = [SynapseParquetFormat]\n)\nAS\nWITH top_movie_ids AS \n(\n    SELECT \n        TOP 10 DTD.MovieID\n        , SUM( CAST(Quantity AS INT) ) AS Quantity\n    FROM\n        factTransactionDetailsVw AS [FTD]\n    INNER JOIN \n        dimTransactionDetailsVw AS [DTD]\n        ON (FTD.TransactionDetailID = DTD.TransactionDetailID)\n    GROUP BY DTD.MovieID\n    ORDER BY Quantity DESC\n)\nSELECT\n    t.MovieID\n    , DM.MovieTitle\n    , MAX( t.Quantity ) AS Quantity\nFROM top_movie_ids t\nINNER JOIN \n    dimMoviesVw AS [DM]\n    ON (t.MovieID = DM.MovieID)\nGROUP BY t.MovieID, DM.MovieTitle\nORDER BY Quantity DESC\n;\nGO\n\nSELECT * FROM TopMovies\nGO\n\n",
+					"query": "-- Create external file format for Parquet\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\n-- Create external data source for data lake\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\n-- CETAS (Create external table as select) to write to data lake\nCREATE EXTERNAL TABLE TopMovies\nWITH (\n    LOCATION = 'TopMovies.parquet/',\n    DATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n    FILE_FORMAT = [SynapseParquetFormat]\n)\nAS\nWITH top_movie_ids AS \n(\n    SELECT \n        TOP 10 DTD.MovieID\n        , SUM( CAST(Quantity AS INT) ) AS Quantity\n    FROM\n        factTransactionDetailsVw AS [FTD]\n    INNER JOIN \n        dimTransactionDetailsVw AS [DTD]\n        ON (FTD.TransactionDetailID = DTD.TransactionDetailID)\n    GROUP BY DTD.MovieID\n    ORDER BY Quantity DESC\n)\nSELECT\n    t.MovieID\n    , DM.MovieTitle\n    , MAX( t.Quantity ) AS Quantity\nFROM top_movie_ids t\nINNER JOIN \n    dimMoviesVw AS [DM]\n    ON (t.MovieID = DM.MovieID)\nGROUP BY t.MovieID, DM.MovieTitle\nORDER BY Quantity DESC\n;\nGO\n\nSELECT * FROM TopMovies\nGO\n\n--DROP EXTERNAL TABLE TopMovies;\n--GO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "Demo"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 05 Stored Procedures')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [Demo];\nGO\n\nCREATE PROCEDURE drop_external_table_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_tables WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL TABLE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_file_format_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_file_formats WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL FILE FORMAT ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_data_source_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_data_sources WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL DATA SOURCE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\n-- EXEC drop_external_table_if_exists 'mytest';\n-- EXEC drop_external_file_format_if_exists 'mytest';\n-- EXEC drop_external_data_source_if_exists 'mytest';\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2112,6 +2156,151 @@
 					}
 				},
 				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 00 -- 01 Magic Commands')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "SparkPool01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1"
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/7c9d382c-5964-48db-9cf6-c595c7ba4339/resourceGroups/synapse-rg/providers/Microsoft.Synapse/workspaces/synapse-syn/bigDataPools/SparkPool01",
+						"name": "SparkPool01",
+						"type": "Spark",
+						"endpoint": "https://synapse-syn.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56
+					}
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"\r\n",
+							"print('Hello World!')"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "scala"
+							},
+							"collapsed": true
+						},
+						"source": [
+							"%%spark\r\n",
+							"\r\n",
+							"println(\"Hello World!\")"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "csharp"
+							},
+							"collapsed": true
+						},
+						"source": [
+							"%%csharp\r\n",
+							"\r\n",
+							"System.Console.WriteLine(\"Hello World!\");"
+						],
+						"outputs": [],
+						"execution_count": 3
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"\r\n",
+							"SELECT \"Hello World!\""
+						],
+						"outputs": [],
+						"execution_count": 4
+					}
+				]
 			},
 			"dependsOn": []
 		},
@@ -2372,21 +2561,168 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 05 Stored Procedures')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"name": "[concat(parameters('workspaceName'), '/Demo 01 -- 03 AutoML Forecast')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
-				"content": {
-					"query": "USE [Demo];\nGO\n\nCREATE PROCEDURE drop_external_table_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_tables WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL TABLE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_file_format_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_file_formats WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL FILE FORMAT ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\nCREATE PROCEDURE drop_external_data_source_if_exists @name SYSNAME\nAS BEGIN\n    IF (0 <> (SELECT COUNT(*) FROM sys.external_data_sources WHERE name = @name))\n    BEGIN\n        DECLARE @drop_stmt NVARCHAR(200) = N'DROP EXTERNAL DATA SOURCE ' + @name; \n        EXEC sp_executesql @tsql = @drop_stmt;\n    END\nEND\nGO\n\n-- EXEC drop_external_table_if_exists 'mytest';\n-- EXEC drop_external_file_format_if_exists 'mytest';\n-- EXEC drop_external_data_source_if_exists 'mytest';\n",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"poolName": "Built-in",
-						"databaseName": "Demo"
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "SparkPool01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
 					}
 				},
-				"type": "SqlQuery"
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1",
+						"state": {}
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/7c9d382c-5964-48db-9cf6-c595c7ba4339/resourceGroups/synapse-rg/providers/Microsoft.Synapse/workspaces/synapse-syn/bigDataPools/SparkPool01",
+						"name": "SparkPool01",
+						"type": "Spark",
+						"endpoint": "https://synapse-syn.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"import azureml.core\n",
+							"\n",
+							"from azureml.core import Experiment, Workspace, Dataset, Datastore\n",
+							"from azureml.train.automl import AutoMLConfig\n",
+							"from azureml.data.dataset_factory import TabularDatasetFactory"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"subscription_id = \"7c9d382c-5964-48db-9cf6-c595c7ba4339\"\n",
+							"resource_group = \"synapse-rg\"\n",
+							"workspace_name = \"synapse-aml\"\n",
+							"experiment_name = \"synapse-syn-dailyrevenue-20210408012050\"\n",
+							"\n",
+							"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)\n",
+							"experiment = Experiment(ws, experiment_name)"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"df = spark.sql(\"SELECT * FROM default.dailyrevenue\")\n",
+							"\n",
+							"datastore = Datastore.get_default(ws)\n",
+							"dataset = TabularDatasetFactory.register_spark_dataframe(df, datastore, name = experiment_name + \"-dataset\")"
+						],
+						"outputs": [],
+						"execution_count": 3
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"from azureml.automl.core.forecasting_parameters import ForecastingParameters\n",
+							"\n",
+							"forecasting_parameters = ForecastingParameters(\n",
+							"    time_column_name = \"Date\",\n",
+							"    forecast_horizon = \"auto\",\n",
+							")\n",
+							"\n",
+							"automl_config = AutoMLConfig(spark_context = sc,\n",
+							"                             task = \"forecasting\",\n",
+							"                             training_data = dataset,\n",
+							"                             label_column_name = \"Revenue\",\n",
+							"                             primary_metric = \"normalized_root_mean_squared_error\",\n",
+							"                             experiment_timeout_hours = 3,\n",
+							"                             max_concurrent_iterations = 2,\n",
+							"                             n_cross_validations = 5,\n",
+							"                             forecasting_parameters = forecasting_parameters)"
+						],
+						"outputs": [],
+						"execution_count": 4
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"run = experiment.submit(automl_config)"
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"displayHTML(\"<a href={} target='_blank'>Your experiment in Azure Machine Learning portal: {}</a>\".format(run.get_portal_url(), run.id))"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"run.wait_for_completion()\n",
+							"\n",
+							"import mlflow\n",
+							"\n",
+							"# Get best model from automl run\n",
+							"best_run, non_onnx_model = run.get_output()\n",
+							"\n",
+							"artifact_path = experiment_name + \"_artifact\"\n",
+							"\n",
+							"mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())\n",
+							"mlflow.set_experiment(experiment_name)\n",
+							"\n",
+							"with mlflow.start_run() as run:\n",
+							"    # Save the model to the outputs directory for capture\n",
+							"    mlflow.sklearn.log_model(non_onnx_model, artifact_path)\n",
+							"\n",
+							"    # Register the model to AML model registry\n",
+							"    mlflow.register_model(\"runs:/\" + run.info.run_id + \"/\" + artifact_path, \"synapse-syn-dailyrevenue-20210408012050-Best\")"
+						],
+						"outputs": [],
+						"execution_count": 7
+					}
+				]
 			},
 			"dependsOn": []
 		}
