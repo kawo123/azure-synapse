@@ -24,7 +24,7 @@
 			"synapse_widget": {
 				"version": "0.1",
 				"state": {
-					"a8c5f94e-5c17-4562-805e-d52b38d0eea6": {
+					"9332c06e-629c-417c-b094-e61f57c00a88": {
 						"type": "Synapse.DataFrame",
 						"sync_state": {
 							"table": {
@@ -2084,7 +2084,7 @@
 					"\r\n",
 					"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)"
 				],
-				"execution_count": 2
+				"execution_count": 4
 			},
 			{
 				"cell_type": "code",
@@ -2107,7 +2107,7 @@
 					"df_orig = df_orig.withColumn('Forecasted', lit(0))\r\n",
 					"df_orig.show(10)"
 				],
-				"execution_count": 32
+				"execution_count": 5
 			},
 			{
 				"cell_type": "code",
@@ -2118,7 +2118,7 @@
 					"mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())\r\n",
 					"print(f'MLFlow Tracking URI: {ws.get_mlflow_tracking_uri()}')"
 				],
-				"execution_count": 5
+				"execution_count": 6
 			},
 			{
 				"cell_type": "code",
@@ -2135,6 +2135,9 @@
 					"collapsed": true
 				},
 				"source": [
+					"import pandas as pd\r\n",
+					"\r\n",
+					"\r\n",
 					"model_path = 'azureml://experiments/synapse-syn-dailyrevenue-20210408012050/runs/26f87a5b-83eb-494f-a976-7d726dbdfd18/artifacts/synapse-syn-dailyrevenue-20210408012050_artifact/'\r\n",
 					"model = mlflow.sklearn.load_model(model_path)\r\n",
 					"\r\n",
@@ -2149,7 +2152,7 @@
 					"\r\n",
 					"print(pdf_forecast.head(5))"
 				],
-				"execution_count": 59
+				"execution_count": 8
 			},
 			{
 				"cell_type": "code",
@@ -2178,7 +2181,7 @@
 					"\r\n",
 					"df_forecast.show(5)"
 				],
-				"execution_count": 57
+				"execution_count": 9
 			},
 			{
 				"cell_type": "code",
@@ -2199,7 +2202,7 @@
 					"\r\n",
 					"display(df) # create line graph to visualize the forecast"
 				],
-				"execution_count": 58
+				"execution_count": 10
 			}
 		]
 	}
