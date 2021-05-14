@@ -1,0 +1,28 @@
+{
+	"name": "Dataflow_Temp",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage",
+						"type": "LinkedServiceReference"
+					},
+					"name": "Account"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "AzureDataLakeStorage",
+						"type": "LinkedServiceReference"
+					},
+					"name": "AccountNew"
+				}
+			],
+			"transformations": [],
+			"script": "source(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'delimited',\n\tfileSystem: 'temp',\n\tfileName: 'account.csv',\n\tcolumnDelimiter: ',',\n\tescapeChar: '\\\\',\n\tqutoChar: '\\\"',\n\tcolumnNamesAsHeader: true,\n\tmultiLineRow: true) ~> Account\nAccount sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delimited',\n\tfileSystem: 'temp',\n\tcolumnDelimiter: ',',\n\tescapeChar: '\\\\',\n\tqutoChar: '\\\"',\n\tcolumnNamesAsHeader: true,\n\tpartitionFileNames:['account-new.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> AccountNew"
+		}
+	}
+}
