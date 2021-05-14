@@ -2035,10 +2035,9 @@
 						"language": "sql"
 					},
 					"currentConnection": {
-						"poolName": "Built-in",
-						"databaseName": "master"
-					},
-					"resultLimit": 5000
+						"name": "master",
+						"type": "SqlOnDemand"
+					}
 				},
 				"type": "SqlQuery"
 			},
@@ -2586,8 +2585,7 @@
 				"metadata": {
 					"saveOutput": true,
 					"synapse_widget": {
-						"version": "0.1",
-						"state": {}
+						"version": "0.1"
 					},
 					"kernelspec": {
 						"name": "synapse_pyspark",
@@ -2608,15 +2606,12 @@
 						"sparkVersion": "2.4",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
-					},
-					"sessionKeepAliveTimeout": 30
+						"memory": 56
+					}
 				},
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"import azureml.core\n",
 							"\n",
@@ -2629,7 +2624,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"subscription_id = \"7c9d382c-5964-48db-9cf6-c595c7ba4339\"\n",
 							"resource_group = \"synapse-rg\"\n",
@@ -2644,7 +2638,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"df = spark.sql(\"SELECT * FROM default.dailyrevenue\")\n",
 							"\n",
@@ -2656,7 +2649,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"from azureml.automl.core.forecasting_parameters import ForecastingParameters\n",
 							"\n",
@@ -2680,7 +2672,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"run = experiment.submit(automl_config)"
 						],
@@ -2689,7 +2680,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"displayHTML(\"<a href={} target='_blank'>Your experiment in Azure Machine Learning portal: {}</a>\".format(run.get_portal_url(), run.id))"
 						],
@@ -2698,7 +2688,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"run.wait_for_completion()\n",
 							"\n",
@@ -2754,7 +2743,7 @@
 					"synapse_widget": {
 						"version": "0.1",
 						"state": {
-							"a8c5f94e-5c17-4562-805e-d52b38d0eea6": {
+							"9332c06e-629c-417c-b094-e61f57c00a88": {
 								"type": "Synapse.DataFrame",
 								"sync_state": {
 									"table": {
@@ -4747,7 +4736,6 @@
 								"persist_state": {
 									"view": {
 										"type": "details",
-										"tableOptions": {},
 										"chartOptions": {
 											"chartType": "line",
 											"aggregationType": "sum",
@@ -4784,10 +4772,8 @@
 						"sparkVersion": "2.4",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
-					},
-					"sessionKeepAliveTimeout": 30
+						"memory": 56
+					}
 				},
 				"cells": [
 					{
@@ -4816,7 +4802,7 @@
 							"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)"
 						],
 						"outputs": [],
-						"execution_count": 2
+						"execution_count": 4
 					},
 					{
 						"cell_type": "code",
@@ -4840,11 +4826,10 @@
 							"df_orig.show(10)"
 						],
 						"outputs": [],
-						"execution_count": 32
+						"execution_count": 5
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"import mlflow\r\n",
 							"\r\n",
@@ -4853,7 +4838,7 @@
 							"print(f'MLFlow Tracking URI: {ws.get_mlflow_tracking_uri()}')"
 						],
 						"outputs": [],
-						"execution_count": 5
+						"execution_count": 6
 					},
 					{
 						"cell_type": "code",
@@ -4870,6 +4855,9 @@
 							"collapsed": true
 						},
 						"source": [
+							"import pandas as pd\r\n",
+							"\r\n",
+							"\r\n",
 							"model_path = 'azureml://experiments/synapse-syn-dailyrevenue-20210408012050/runs/26f87a5b-83eb-494f-a976-7d726dbdfd18/artifacts/synapse-syn-dailyrevenue-20210408012050_artifact/'\r\n",
 							"model = mlflow.sklearn.load_model(model_path)\r\n",
 							"\r\n",
@@ -4885,7 +4873,7 @@
 							"print(pdf_forecast.head(5))"
 						],
 						"outputs": [],
-						"execution_count": 59
+						"execution_count": 8
 					},
 					{
 						"cell_type": "code",
@@ -4915,7 +4903,7 @@
 							"df_forecast.show(5)"
 						],
 						"outputs": [],
-						"execution_count": 57
+						"execution_count": 9
 					},
 					{
 						"cell_type": "code",
@@ -4937,9 +4925,83 @@
 							"display(df) # create line graph to visualize the forecast"
 						],
 						"outputs": [],
-						"execution_count": 58
+						"execution_count": 10
 					}
 				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CSV_Temp')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "temp"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/AzureDataLakeStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CSV_Temp_Account_New')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "account-new.csv",
+						"fileSystem": "temp"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/AzureDataLakeStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Dataflow_Temp')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"name": "source1"
+						}
+					],
+					"sinks": [],
+					"transformations": [],
+					"script": "source(allowSchemaDrift: true,\n\tvalidateSchema: false) ~> source1"
+				}
 			},
 			"dependsOn": []
 		}
