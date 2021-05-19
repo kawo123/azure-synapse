@@ -19,6 +19,13 @@
 						"referenceName": "Dataflow_Temp",
 						"type": "DataFlowReference"
 					},
+					"staging": {
+						"linkedService": {
+							"referenceName": "AzureDataLakeStorage",
+							"type": "LinkedServiceReference"
+						},
+						"folderPath": "temp/staging"
+					},
 					"compute": {
 						"coreCount": 8,
 						"computeType": "General"
