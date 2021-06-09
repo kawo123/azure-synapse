@@ -7,9 +7,10 @@
 				"language": "sql"
 			},
 			"currentConnection": {
-				"name": "master",
-				"type": "SqlOnDemand"
-			}
+				"poolName": "Built-in",
+				"databaseName": "Demo"
+			},
+			"resultLimit": 5000
 		},
 		"type": "SqlQuery"
 	}
