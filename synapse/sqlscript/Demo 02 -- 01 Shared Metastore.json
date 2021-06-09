@@ -1,0 +1,17 @@
+{
+	"name": "Demo 02 -- 01 Shared Metastore",
+	"properties": {
+		"content": {
+			"query": "-- View tables in database\nUSE testsparkdb;\nSELECT * FROM sys.tables;\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"poolName": "Built-in",
+				"databaseName": "testsparkdb"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
