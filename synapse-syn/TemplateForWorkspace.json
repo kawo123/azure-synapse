@@ -1760,7 +1760,7 @@
 							"name": "UnionCustomers"
 						}
 					],
-					"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudSalesCustomers\nsource(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudStreamingCustomers\nCloudSalesCustomers, CloudStreamingCustomers union(byName: true)~> UnionCustomers\nUnionCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Customers"
+					"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudSalesCustomers\nsource(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('roundRobin', 5)) ~> CloudStreamingCustomers\nCloudSalesCustomers, CloudStreamingCustomers union(byName: true)~> UnionCustomers\nUnionCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Customers"
 				}
 			},
 			"dependsOn": [
@@ -1811,7 +1811,7 @@
 							"name": "SelectDimCustomers"
 						}
 					],
-					"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tCustomerID\n\t)) ~> DatasetCustomersParquet\nDatasetCustomersParquet aggregate(groupBy(CustomerID),\n\tDummyCount = count(1)) ~> UniqueCustomers\nDatasetCustomersParquet select(mapColumn(\n\t\tCustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateCustomersParquet\nUniqueCustomers, DuplicateCustomersParquet join(UniqueCustomers@CustomerID == DuplicateCustomersParquet@CustomerID,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinUniqueCustomers\nJoinUniqueCustomers derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDeriveProcessDate select(mapColumn(\n\t\tCustomerID = UniqueCustomers@CustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate,\n\t\tProcessDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectDimCustomers\nSelectDimCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimCustomersParquet"
+					"script": "source(output(\n\t\tCustomerID as string,\n\t\tLastName as string,\n\t\tFirstName as string,\n\t\tPhoneNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tCustomerID\n\t)) ~> DatasetCustomersParquet\nDatasetCustomersParquet aggregate(groupBy(CustomerID),\n\tDummyCount = count(1)) ~> UniqueCustomers\nDatasetCustomersParquet select(mapColumn(\n\t\tCustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateCustomersParquet\nUniqueCustomers, DuplicateCustomersParquet join(UniqueCustomers@CustomerID == DuplicateCustomersParquet@CustomerID,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinUniqueCustomers\nJoinUniqueCustomers derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDeriveProcessDate select(mapColumn(\n\t\tCustomerID = UniqueCustomers@CustomerID,\n\t\tLastName,\n\t\tFirstName,\n\t\tPhoneNumber,\n\t\tCreatedDate,\n\t\tUpdatedDate,\n\t\tProcessDate\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectDimCustomers\nSelectDimCustomers sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimCustomersParquet"
 				}
 			},
 			"dependsOn": [
@@ -1887,7 +1887,7 @@
 							"name": "RemoveActorandCatalogID"
 						}
 					],
-					"script": "source(output(\n\t\tActor as string,\n\t\tReleaseDate as date,\n\t\tGenre as string,\n\t\tRating as string,\n\t\tAvailabilityYear as integer,\n\t\tRuntime as short,\n\t\tAvailabilityDate as date,\n\t\tMovieTier as short,\n\t\tMovieTitle as string,\n\t\tMovieID as string,\n\t\tCatalogID as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t)) ~> DatasetMoviesParquet\nDatasetMoviesParquet aggregate(groupBy(Actor),\n\tDummyCount = count(1)) ~> UniqueActors\nUniqueActors derive(ActorID = uuid()) ~> DeriveActorID\nDeriveActorID select(mapColumn(\n\t\tActorName = Actor,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimActors\nDatasetMoviesParquet select(mapColumn(\n\t\tActor,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MovieActors\nMovieActors, DimActors join(Actor == ActorName,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinActorID\nJoinActorID select(mapColumn(\n\t\tMovieID,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorName\nRemoveActorName derive(MovieActorID = uuid()) ~> DeriveMovieActorsID\nRemoveActorandCatalogID aggregate(groupBy(MovieID),\n\teach(match(name!='MovieID'), $$ = max($$))) ~> DedupMovies\nDatasetMoviesParquet select(mapColumn(\n\t\tReleaseDate,\n\t\tGenre,\n\t\tRating,\n\t\tAvailabilityYear,\n\t\tRuntime,\n\t\tAvailabilityDate,\n\t\tMovieTier,\n\t\tMovieTitle,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorandCatalogID\nDimActors sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimActorsParquet\nDeriveMovieActorsID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactMovieActorsParquet\nDedupMovies sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimMoviesParquet"
+					"script": "source(output(\n\t\tActor as string,\n\t\tReleaseDate as date,\n\t\tGenre as string,\n\t\tRating as string,\n\t\tAvailabilityYear as integer,\n\t\tRuntime as short,\n\t\tAvailabilityDate as date,\n\t\tMovieTier as short,\n\t\tMovieTitle as string,\n\t\tMovieID as string,\n\t\tCatalogID as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t)) ~> DatasetMoviesParquet\nDatasetMoviesParquet aggregate(groupBy(Actor),\n\tDummyCount = count(1)) ~> UniqueActors\nUniqueActors derive(ActorID = uuid()) ~> DeriveActorID\nDeriveActorID select(mapColumn(\n\t\tActorName = Actor,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimActors\nDatasetMoviesParquet select(mapColumn(\n\t\tActor,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MovieActors\nMovieActors, DimActors join(Actor == ActorName,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> JoinActorID\nJoinActorID select(mapColumn(\n\t\tMovieID,\n\t\tActorID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorName\nRemoveActorName derive(MovieActorID = uuid()) ~> DeriveMovieActorsID\nRemoveActorandCatalogID aggregate(groupBy(MovieID),\n\teach(match(name!='MovieID'), $$ = max($$))) ~> DedupMovies\nDatasetMoviesParquet select(mapColumn(\n\t\tReleaseDate,\n\t\tGenre,\n\t\tRating,\n\t\tAvailabilityYear,\n\t\tRuntime,\n\t\tAvailabilityDate,\n\t\tMovieTier,\n\t\tMovieTitle,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveActorandCatalogID\nDimActors sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimActorsParquet\nDeriveMovieActorsID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactMovieActorsParquet\nDedupMovies sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimMoviesParquet"
 				}
 			},
 			"dependsOn": [
@@ -1968,7 +1968,7 @@
 							"name": "SelectTransactionColumns"
 						}
 					],
-					"script": "source(output(\n\t\tOrderID as string,\n\t\tCustomerID as string,\n\t\tOrderDate as string,\n\t\tShipDate as string,\n\t\tTotalCost as string,\n\t\tOrderDetailID as string,\n\t\tMovieID as string,\n\t\tQuantity as string,\n\t\tUnitCost as string,\n\t\tLineNumber as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('roundRobin', 5)) ~> DatasetOrdersParquet\nSelectTransactionColumns aggregate(groupBy(TransactionID),\n\teach(match(name!='TransactionID'), $$ = max($$))) ~> UniqueOrders\nDatasetOrdersParquet select(mapColumn(\n\t\tOrderID,\n\t\tCustomerID,\n\t\tOrderDate,\n\t\tShipDate,\n\t\tTotalCost,\n\t\tOrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateOrders\nUniqueOrders derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDatasetOrdersParquet aggregate(groupBy(OrderDetailID),\n\tDummyCount = count()) ~> UniqueOrderDetails\nUniqueOrderDetails, DuplicateOrders join(UniqueOrderDetails@OrderDetailID == DuplicateOrders@OrderDetailID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinOrderDetails\nJoinOrderDetails select(mapColumn(\n\t\tTransactionDetailID = UniqueOrderDetails@OrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimTransactionDetails\nDimTransactionDetails derive(ProcessDate = currentDate()) ~> DeriveProcessDate2\nDuplicateOrders select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tTransactionDetailID = OrderDetailID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> FactTransactionDetails\nFactTransactionDetails derive(ID = uuid()) ~> DeriveID\nDatasetOrdersParquet select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tCustomerID,\n\t\tTransactionDate = OrderDate,\n\t\tShipDate,\n\t\tTotalCost\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectTransactionColumns\nDeriveProcessDate sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionsParquet\nDeriveProcessDate2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionDetailsParquet\nDeriveID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactTransactionDetailsParquet"
+					"script": "source(output(\n\t\tOrderID as string,\n\t\tCustomerID as string,\n\t\tOrderDate as string,\n\t\tShipDate as string,\n\t\tTotalCost as string,\n\t\tOrderDetailID as string,\n\t\tMovieID as string,\n\t\tQuantity as string,\n\t\tUnitCost as string,\n\t\tLineNumber as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet',\n\tpartitionBy('roundRobin', 5)) ~> DatasetOrdersParquet\nSelectTransactionColumns aggregate(groupBy(TransactionID),\n\teach(match(name!='TransactionID'), $$ = max($$))) ~> UniqueOrders\nDatasetOrdersParquet select(mapColumn(\n\t\tOrderID,\n\t\tCustomerID,\n\t\tOrderDate,\n\t\tShipDate,\n\t\tTotalCost,\n\t\tOrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DuplicateOrders\nUniqueOrders derive(ProcessDate = currentDate()) ~> DeriveProcessDate\nDatasetOrdersParquet aggregate(groupBy(OrderDetailID),\n\tDummyCount = count()) ~> UniqueOrderDetails\nUniqueOrderDetails, DuplicateOrders join(UniqueOrderDetails@OrderDetailID == DuplicateOrders@OrderDetailID,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinOrderDetails\nJoinOrderDetails select(mapColumn(\n\t\tTransactionDetailID = UniqueOrderDetails@OrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DimTransactionDetails\nDimTransactionDetails derive(ProcessDate = currentDate()) ~> DeriveProcessDate2\nDuplicateOrders select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tTransactionDetailID = OrderDetailID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> FactTransactionDetails\nFactTransactionDetails derive(ID = uuid()) ~> DeriveID\nDatasetOrdersParquet select(mapColumn(\n\t\tTransactionID = OrderID,\n\t\tCustomerID,\n\t\tTransactionDate = OrderDate,\n\t\tShipDate,\n\t\tTotalCost\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectTransactionColumns\nDeriveProcessDate sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionsParquet\nDeriveProcessDate2 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetDimTransactionDetailsParquet\nDeriveID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> DatasetFactTransactionDetailsParquet"
 				}
 			},
 			"dependsOn": [
@@ -2011,7 +2011,7 @@
 							"name": "DeriveCatalogID"
 						}
 					],
-					"script": "source(output(\n\t\t{_attachments} as string,\n\t\t{_etag} as string,\n\t\t{_rid} as string,\n\t\t{_self} as string,\n\t\t{_ts} as integer,\n\t\tactors as (name as string)[],\n\t\tavailabilityDate as timestamp,\n\t\tgenre as string,\n\t\tid as string,\n\t\trating as string,\n\t\treleaseYear as short,\n\t\truntime as short,\n\t\tstreamingAvailabilityDate as timestamp,\n\t\ttier as short,\n\t\ttitle as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> MoviesBronze\nMoviesBronze foldDown(unroll(actors),\n\tmapColumn(\n\t\tActor = actors.name,\n\t\tReleaseDate = availabilityDate,\n\t\tGenre = genre,\n\t\tRating = rating,\n\t\tAvailabilityYear = releaseYear,\n\t\tRuntime = runtime,\n\t\tAvailabilityDate = streamingAvailabilityDate,\n\t\tMovieTier = tier,\n\t\tMovieTitle = title,\n\t\tMovieID = id\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenActors\nFlattenActors derive(CatalogID = uuid(),\n\t\tReleaseDate = toDate(ReleaseDate),\n\t\tAvailabilityYear = toInteger(AvailabilityYear),\n\t\tAvailabilityDate = toDate(AvailabilityDate)) ~> DeriveCatalogID\nDeriveCatalogID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MoviesSilver"
+					"script": "source(output(\n\t\t{_attachments} as string,\n\t\t{_etag} as string,\n\t\t{_rid} as string,\n\t\t{_self} as string,\n\t\t{_ts} as integer,\n\t\tactors as (name as string)[],\n\t\tavailabilityDate as timestamp,\n\t\tgenre as string,\n\t\tid as string,\n\t\trating as string,\n\t\treleaseYear as short,\n\t\truntime as short,\n\t\tstreamingAvailabilityDate as timestamp,\n\t\ttier as short,\n\t\ttitle as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> MoviesBronze\nMoviesBronze foldDown(unroll(actors),\n\tmapColumn(\n\t\tActor = actors.name,\n\t\tReleaseDate = availabilityDate,\n\t\tGenre = genre,\n\t\tRating = rating,\n\t\tAvailabilityYear = releaseYear,\n\t\tRuntime = runtime,\n\t\tAvailabilityDate = streamingAvailabilityDate,\n\t\tMovieTier = tier,\n\t\tMovieTitle = title,\n\t\tMovieID = id\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> FlattenActors\nFlattenActors derive(CatalogID = uuid(),\n\t\tReleaseDate = toDate(ReleaseDate),\n\t\tAvailabilityYear = toInteger(AvailabilityYear),\n\t\tAvailabilityDate = toDate(AvailabilityDate)) ~> DeriveCatalogID\nDeriveCatalogID sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tpartitionBy('hash', 5,\n\t\tMovieID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> MoviesSilver"
 				}
 			},
 			"dependsOn": [
@@ -2059,7 +2059,7 @@
 							"name": "SelectOrders"
 						}
 					],
-					"script": "source(output(\n\t\tOrderID as string,\n\t\tCustomerID as string,\n\t\tOrderDate as string,\n\t\tShipDate as string,\n\t\tTotalCost as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 5,\n\t\tOrderID\n\t)) ~> CloudSalesOrders\nsource(output(\n\t\tOrderDetailID as string,\n\t\tOrderID as string,\n\t\tMovieID as string,\n\t\tQuantity as string,\n\t\tUnitCost as string,\n\t\tLineNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 5,\n\t\tOrderID\n\t)) ~> CloudSalesOrderDetails\nCloudSalesOrders, CloudSalesOrderDetails join(CloudSalesOrders@OrderID == CloudSalesOrderDetails@OrderID,\n\tjoinType:'right',\n\tbroadcast: 'auto')~> JoinOrders\nJoinOrders select(mapColumn(\n\t\tOrderID = CloudSalesOrders@OrderID,\n\t\tCustomerID,\n\t\tOrderDate,\n\t\tShipDate,\n\t\tTotalCost,\n\t\tOrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectOrders\nSelectOrders sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Orders"
+					"script": "source(output(\n\t\tOrderID as string,\n\t\tCustomerID as string,\n\t\tOrderDate as string,\n\t\tShipDate as string,\n\t\tTotalCost as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 5,\n\t\tOrderID\n\t)) ~> CloudSalesOrders\nsource(output(\n\t\tOrderDetailID as string,\n\t\tOrderID as string,\n\t\tMovieID as string,\n\t\tQuantity as string,\n\t\tUnitCost as string,\n\t\tLineNumber as string,\n\t\tCreatedDate as string,\n\t\tUpdatedDate as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tpartitionBy('hash', 5,\n\t\tOrderID\n\t)) ~> CloudSalesOrderDetails\nCloudSalesOrders, CloudSalesOrderDetails join(CloudSalesOrders@OrderID == CloudSalesOrderDetails@OrderID,\n\tjoinType:'right',\n\tbroadcast: 'auto')~> JoinOrders\nJoinOrders select(mapColumn(\n\t\tOrderID = CloudSalesOrders@OrderID,\n\t\tCustomerID,\n\t\tOrderDate,\n\t\tShipDate,\n\t\tTotalCost,\n\t\tOrderDetailID,\n\t\tMovieID,\n\t\tQuantity,\n\t\tUnitCost,\n\t\tLineNumber\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectOrders\nSelectOrders sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'parquet',\n\ttruncate: true,\n\tumask: 0022,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Orders"
 				}
 			},
 			"dependsOn": [
@@ -2101,7 +2101,7 @@
 							"name": "Select1"
 						}
 					],
-					"script": "source(output(\n\t\tId as string,\n\t\tSinkCreatedOn as string,\n\t\tSinkModifiedOn as string,\n\t\tstatecode as string,\n\t\tstatuscode as string,\n\t\taddress1_addresstypecode as string,\n\t\tmsdyn_travelchargetype as integer,\n\t\taddress1_shippingmethodcode as string,\n\t\taccountcategorycode as string,\n\t\taddress1_freighttermscode as string,\n\t\tpreferredappointmenttimecode as string,\n\t\taccountclassificationcode as string,\n\t\tcustomersizecode as string,\n\t\townershipcode as string,\n\t\taddress2_freighttermscode as string,\n\t\tpreferredcontactmethodcode as string,\n\t\tindustrycode as string,\n\t\tshippingmethodcode as string,\n\t\tpaymenttermscode as string,\n\t\tbusinesstypecode as string,\n\t\taccountratingcode as string,\n\t\taddress2_addresstypecode as string,\n\t\tcustomertypecode as string,\n\t\taddress2_shippingmethodcode as string,\n\t\tpreferredappointmentdaycode as string,\n\t\tterritorycode as boolean,\n\t\tdonotpostalmail as boolean,\n\t\tcreditonhold as boolean,\n\t\tdonotbulkpostalmail as boolean,\n\t\tdonotbulkemail as boolean,\n\t\tdonotfax as boolean,\n\t\tdonotemail as boolean,\n\t\tfollowemail as boolean,\n\t\tparticipatesinworkflow as boolean,\n\t\tmarketingonly as boolean,\n\t\tisprivate as boolean,\n\t\tmerged as boolean,\n\t\tdonotphone as boolean,\n\t\tdonotsendmm as boolean,\n\t\tmsdyn_taxexempt as boolean,\n\t\tmsa_managingpartnerid as string,\n\t\tmsa_managingpartnerid_entitytype as string,\n\t\tcreatedonbehalfby as string,\n\t\tcreatedonbehalfby_entitytype as string,\n\t\toriginatingleadid as string,\n\t\toriginatingleadid_entitytype as string,\n\t\tterritoryid as string,\n\t\tterritoryid_entitytype as string,\n\t\tslaid as string,\n\t\tslaid_entitytype as string,\n\t\tparentaccountid as string,\n\t\tparentaccountid_entitytype as string,\n\t\tmsdyn_serviceterritory as string,\n\t\tmsdyn_serviceterritory_entitytype as string,\n\t\tprimarycontactid as string,\n\t\tprimarycontactid_entitytype as string,\n\t\towningbusinessunit as string,\n\t\towningbusinessunit_entitytype as string,\n\t\tmodifiedby as string,\n\t\tmodifiedby_entitytype as string,\n\t\tmodifiedonbehalfby as string,\n\t\tmodifiedonbehalfby_entitytype as string,\n\t\tmsdyn_workhourtemplate as string,\n\t\tmsdyn_workhourtemplate_entitytype as string,\n\t\towninguser as string,\n\t\towninguser_entitytype as string,\n\t\tcreatedbyexternalparty as string,\n\t\tcreatedbyexternalparty_entitytype as string,\n\t\towningteam as string,\n\t\towningteam_entitytype as string,\n\t\tslainvokedid as string,\n\t\tslainvokedid_entitytype as string,\n\t\tpreferredequipmentid as string,\n\t\tpreferredequipmentid_entitytype as string,\n\t\ttransactioncurrencyid as string,\n\t\ttransactioncurrencyid_entitytype as string,\n\t\tmsdyn_billingaccount as string,\n\t\tmsdyn_billingaccount_entitytype as string,\n\t\tmasterid as string,\n\t\tmasterid_entitytype as string,\n\t\tmodifiedbyexternalparty as string,\n\t\tmodifiedbyexternalparty_entitytype as string,\n\t\tdefaultpricelevelid as string,\n\t\tdefaultpricelevelid_entitytype as string,\n\t\tcreatedby as string,\n\t\tcreatedby_entitytype as string,\n\t\tmsdyn_preferredresource as string,\n\t\tmsdyn_preferredresource_entitytype as string,\n\t\tpreferredserviceid as string,\n\t\tpreferredserviceid_entitytype as string,\n\t\tmsdyn_salestaxcode as string,\n\t\tmsdyn_salestaxcode_entitytype as string,\n\t\tpreferredsystemuserid as string,\n\t\tpreferredsystemuserid_entitytype as string,\n\t\townerid as string,\n\t\townerid_entitytype as string,\n\t\taging90 as string,\n\t\topenrevenue as double,\n\t\taging30 as string,\n\t\tmsdyn_travelcharge_base as string,\n\t\taging60_base as string,\n\t\tcreditlimit as string,\n\t\topenrevenue_base as double,\n\t\tcreditlimit_base as string,\n\t\taging60 as string,\n\t\trevenue as double,\n\t\tmsdyn_travelcharge as string,\n\t\trevenue_base as double,\n\t\taging90_base as string,\n\t\tmarketcap_base as string,\n\t\tmarketcap as string,\n\t\taging30_base as string,\n\t\temailaddress3 as string,\n\t\temailaddress2 as string,\n\t\temailaddress1 as string,\n\t\tmasteraccountidyominame as string,\n\t\taddress1_city as string,\n\t\taddress1_line1 as string,\n\t\tadx_createdbyipaddress as string,\n\t\tmodifiedon as string,\n\t\twebsiteurl as string,\n\t\taddress1_longitude as string,\n\t\tentityimage_timestamp as string,\n\t\tsharesoutstanding as string,\n\t\tadx_modifiedbyusername as string,\n\t\tmsa_managingpartneridyominame as string,\n\t\tprimarycontactidname as string,\n\t\ttransactioncurrencyidname as string,\n\t\tmsdyn_salestaxcodename as string,\n\t\tpreferredsystemuseridyominame as string,\n\t\ttelephone1 as string,\n\t\ttelephone2 as string,\n\t\topendeals_date as string,\n\t\tmodifiedbyexternalpartyyominame as string,\n\t\tmasteraccountidname as string,\n\t\tpreferredsystemuseridname as string,\n\t\taddress2_stateorprovince as string,\n\t\taddress2_line2 as string,\n\t\tmsdyn_preferredresourcename as string,\n\t\taddress1_line3 as string,\n\t\tname as string,\n\t\tonholdtime as string,\n\t\tparentaccountidname as string,\n\t\toriginatingleadidname as string,\n\t\taddress1_utcoffset as string,\n\t\tnumberofemployees as short,\n\t\tmodifiedbyexternalpartyname as string,\n\t\taddress1_telephone1 as string,\n\t\texchangerate as double,\n\t\taddress2_county as string,\n\t\ttelephone3 as string,\n\t\tfax as string,\n\t\taddress2_city as string,\n\t\tmsdyn_taxexemptnumber as string,\n\t\taddress2_latitude as string,\n\t\tcreatedon as string,\n\t\ttimespentbymeonemailandmeetings as string,\n\t\taddress1_composite as string,\n\t\topendeals_state as boolean,\n\t\taddress2_postalcode as string,\n\t\tlastusedincampaign as string,\n\t\tprocessid as string,\n\t\towneridyominame as string,\n\t\tentityimage_url as string,\n\t\tteamsfollowed as string,\n\t\taddress2_line3 as string,\n\t\tdescription as string,\n\t\ttimezoneruleversionnumber as string,\n\t\taddress1_county as string,\n\t\tcreatedbyname as string,\n\t\tmsdyn_workhourtemplatename as string,\n\t\taddress2_postofficebox as string,\n\t\taddress2_telephone1 as string,\n\t\taddress2_telephone2 as string,\n\t\taddress2_telephone3 as string,\n\t\toriginatingleadidyominame as string,\n\t\tadx_createdbyusername as string,\n\t\taddress1_addressid as string,\n\t\ttraversedpath as string,\n\t\tterritoryidname as string,\n\t\tyominame as string,\n\t\tcreatedonbehalfbyname as string,\n\t\taddress2_name as string,\n\t\topenrevenue_state as boolean,\n\t\taddress1_country as string,\n\t\tprimarysatoriid as string,\n\t\towneridtype as string,\n\t\tentityimageid as string,\n\t\tadx_modifiedbyipaddress as string,\n\t\tprimarytwitterid as string,\n\t\towneridname as string,\n\t\tmodifiedonbehalfbyname as string,\n\t\toverriddencreatedon as string,\n\t\taddress2_composite as string,\n\t\taddress1_stateorprovince as string,\n\t\tmsa_managingpartneridname as string,\n\t\tpreferredserviceidname as string,\n\t\tcreatedbyexternalpartyyominame as string,\n\t\tmsdyn_billingaccountyominame as string,\n\t\taddress1_telephone2 as string,\n\t\taddress1_telephone3 as string,\n\t\taddress1_postofficebox as string,\n\t\tcreatedonbehalfbyyominame as string,\n\t\tslainvokedidname as string,\n\t\taddress2_country as string,\n\t\tsic as string,\n\t\taddress2_utcoffset as string,\n\t\taccountnumber as string,\n\t\taddress2_fax as string,\n\t\taddress2_addressid as string,\n\t\taddress2_longitude as string,\n\t\tftpsiteurl as string,\n\t\tpreferredequipmentidname as string,\n\t\taddress1_primarycontactname as string,\n\t\tmodifiedbyyominame as string,\n\t\tlastonholdtime as string,\n\t\taddress1_line2 as string,\n\t\topenrevenue_date as string,\n\t\taddress2_upszone as string,\n\t\taddress1_postalcode as integer,\n\t\ttickersymbol as string,\n\t\tstageid as string,\n\t\tutcconversiontimezonecode as string,\n\t\tcreatedbyexternalpartyname as string,\n\t\tdefaultpricelevelidname as string,\n\t\tmsdyn_serviceterritoryname as string,\n\t\tstockexchange as string,\n\t\tmsdyn_externalaccountid as string,\n\t\tmsdyn_billingaccountname as string,\n\t\timportsequencenumber as short,\n\t\tmsdyn_workorderinstructions as string,\n\t\tversionnumber as integer,\n\t\taccountid as string,\n\t\taddress1_name as string,\n\t\taddress1_fax as string,\n\t\taddress1_latitude as string,\n\t\tprimarycontactidyominame as string,\n\t\tmodifiedbyname as string,\n\t\tcreatedbyyominame as string,\n\t\taddress2_line1 as string,\n\t\taddress1_upszone as string,\n\t\tmodifiedonbehalfbyyominame as string,\n\t\tslaname as string,\n\t\tparentaccountidyominame as string,\n\t\taddress2_primarycontactname as string,\n\t\topendeals as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'delimited',\n\tfileSystem: 'temp',\n\tfileName: 'account.csv',\n\tcolumnDelimiter: ',',\n\tescapeChar: '\\\\',\n\tqutoChar: '\\\"',\n\tcolumnNamesAsHeader: true,\n\tmultiLineRow: true) ~> Account\nAccount derive(address1_composite_new = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, '\\\\n'),\n\t\taddress1_composite_new2 = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, '\\\\\\\\n'),\n\t\taddress1_composite_new3 = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, ''),\n\t\taddress1_composite_new4 = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, ' ')) ~> DerivedAddressComposite\nDerivedAddressComposite select(mapColumn(\n\t\taddress1_composite,\n\t\taddress1_composite_new,\n\t\taddress1_composite_new2,\n\t\taddress1_composite_new3,\n\t\taddress1_composite_new4\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Select1\nSelect1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delimited',\n\tfileSystem: 'temp',\n\tcolumnDelimiter: ',',\n\tescapeChar: '\\\\',\n\tqutoChar: '\\\"',\n\tcolumnNamesAsHeader: true,\n\tpartitionFileNames:['account-new.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> AccountNew"
+					"script": "source(output(\n\t\tId as string,\n\t\tSinkCreatedOn as string,\n\t\tSinkModifiedOn as string,\n\t\tstatecode as string,\n\t\tstatuscode as string,\n\t\taddress1_addresstypecode as string,\n\t\tmsdyn_travelchargetype as integer,\n\t\taddress1_shippingmethodcode as string,\n\t\taccountcategorycode as string,\n\t\taddress1_freighttermscode as string,\n\t\tpreferredappointmenttimecode as string,\n\t\taccountclassificationcode as string,\n\t\tcustomersizecode as string,\n\t\townershipcode as string,\n\t\taddress2_freighttermscode as string,\n\t\tpreferredcontactmethodcode as string,\n\t\tindustrycode as string,\n\t\tshippingmethodcode as string,\n\t\tpaymenttermscode as string,\n\t\tbusinesstypecode as string,\n\t\taccountratingcode as string,\n\t\taddress2_addresstypecode as string,\n\t\tcustomertypecode as string,\n\t\taddress2_shippingmethodcode as string,\n\t\tpreferredappointmentdaycode as string,\n\t\tterritorycode as boolean,\n\t\tdonotpostalmail as boolean,\n\t\tcreditonhold as boolean,\n\t\tdonotbulkpostalmail as boolean,\n\t\tdonotbulkemail as boolean,\n\t\tdonotfax as boolean,\n\t\tdonotemail as boolean,\n\t\tfollowemail as boolean,\n\t\tparticipatesinworkflow as boolean,\n\t\tmarketingonly as boolean,\n\t\tisprivate as boolean,\n\t\tmerged as boolean,\n\t\tdonotphone as boolean,\n\t\tdonotsendmm as boolean,\n\t\tmsdyn_taxexempt as boolean,\n\t\tmsa_managingpartnerid as string,\n\t\tmsa_managingpartnerid_entitytype as string,\n\t\tcreatedonbehalfby as string,\n\t\tcreatedonbehalfby_entitytype as string,\n\t\toriginatingleadid as string,\n\t\toriginatingleadid_entitytype as string,\n\t\tterritoryid as string,\n\t\tterritoryid_entitytype as string,\n\t\tslaid as string,\n\t\tslaid_entitytype as string,\n\t\tparentaccountid as string,\n\t\tparentaccountid_entitytype as string,\n\t\tmsdyn_serviceterritory as string,\n\t\tmsdyn_serviceterritory_entitytype as string,\n\t\tprimarycontactid as string,\n\t\tprimarycontactid_entitytype as string,\n\t\towningbusinessunit as string,\n\t\towningbusinessunit_entitytype as string,\n\t\tmodifiedby as string,\n\t\tmodifiedby_entitytype as string,\n\t\tmodifiedonbehalfby as string,\n\t\tmodifiedonbehalfby_entitytype as string,\n\t\tmsdyn_workhourtemplate as string,\n\t\tmsdyn_workhourtemplate_entitytype as string,\n\t\towninguser as string,\n\t\towninguser_entitytype as string,\n\t\tcreatedbyexternalparty as string,\n\t\tcreatedbyexternalparty_entitytype as string,\n\t\towningteam as string,\n\t\towningteam_entitytype as string,\n\t\tslainvokedid as string,\n\t\tslainvokedid_entitytype as string,\n\t\tpreferredequipmentid as string,\n\t\tpreferredequipmentid_entitytype as string,\n\t\ttransactioncurrencyid as string,\n\t\ttransactioncurrencyid_entitytype as string,\n\t\tmsdyn_billingaccount as string,\n\t\tmsdyn_billingaccount_entitytype as string,\n\t\tmasterid as string,\n\t\tmasterid_entitytype as string,\n\t\tmodifiedbyexternalparty as string,\n\t\tmodifiedbyexternalparty_entitytype as string,\n\t\tdefaultpricelevelid as string,\n\t\tdefaultpricelevelid_entitytype as string,\n\t\tcreatedby as string,\n\t\tcreatedby_entitytype as string,\n\t\tmsdyn_preferredresource as string,\n\t\tmsdyn_preferredresource_entitytype as string,\n\t\tpreferredserviceid as string,\n\t\tpreferredserviceid_entitytype as string,\n\t\tmsdyn_salestaxcode as string,\n\t\tmsdyn_salestaxcode_entitytype as string,\n\t\tpreferredsystemuserid as string,\n\t\tpreferredsystemuserid_entitytype as string,\n\t\townerid as string,\n\t\townerid_entitytype as string,\n\t\taging90 as string,\n\t\topenrevenue as double,\n\t\taging30 as string,\n\t\tmsdyn_travelcharge_base as string,\n\t\taging60_base as string,\n\t\tcreditlimit as string,\n\t\topenrevenue_base as double,\n\t\tcreditlimit_base as string,\n\t\taging60 as string,\n\t\trevenue as double,\n\t\tmsdyn_travelcharge as string,\n\t\trevenue_base as double,\n\t\taging90_base as string,\n\t\tmarketcap_base as string,\n\t\tmarketcap as string,\n\t\taging30_base as string,\n\t\temailaddress3 as string,\n\t\temailaddress2 as string,\n\t\temailaddress1 as string,\n\t\tmasteraccountidyominame as string,\n\t\taddress1_city as string,\n\t\taddress1_line1 as string,\n\t\tadx_createdbyipaddress as string,\n\t\tmodifiedon as string,\n\t\twebsiteurl as string,\n\t\taddress1_longitude as string,\n\t\tentityimage_timestamp as string,\n\t\tsharesoutstanding as string,\n\t\tadx_modifiedbyusername as string,\n\t\tmsa_managingpartneridyominame as string,\n\t\tprimarycontactidname as string,\n\t\ttransactioncurrencyidname as string,\n\t\tmsdyn_salestaxcodename as string,\n\t\tpreferredsystemuseridyominame as string,\n\t\ttelephone1 as string,\n\t\ttelephone2 as string,\n\t\topendeals_date as string,\n\t\tmodifiedbyexternalpartyyominame as string,\n\t\tmasteraccountidname as string,\n\t\tpreferredsystemuseridname as string,\n\t\taddress2_stateorprovince as string,\n\t\taddress2_line2 as string,\n\t\tmsdyn_preferredresourcename as string,\n\t\taddress1_line3 as string,\n\t\tname as string,\n\t\tonholdtime as string,\n\t\tparentaccountidname as string,\n\t\toriginatingleadidname as string,\n\t\taddress1_utcoffset as string,\n\t\tnumberofemployees as short,\n\t\tmodifiedbyexternalpartyname as string,\n\t\taddress1_telephone1 as string,\n\t\texchangerate as double,\n\t\taddress2_county as string,\n\t\ttelephone3 as string,\n\t\tfax as string,\n\t\taddress2_city as string,\n\t\tmsdyn_taxexemptnumber as string,\n\t\taddress2_latitude as string,\n\t\tcreatedon as string,\n\t\ttimespentbymeonemailandmeetings as string,\n\t\taddress1_composite as string,\n\t\topendeals_state as boolean,\n\t\taddress2_postalcode as string,\n\t\tlastusedincampaign as string,\n\t\tprocessid as string,\n\t\towneridyominame as string,\n\t\tentityimage_url as string,\n\t\tteamsfollowed as string,\n\t\taddress2_line3 as string,\n\t\tdescription as string,\n\t\ttimezoneruleversionnumber as string,\n\t\taddress1_county as string,\n\t\tcreatedbyname as string,\n\t\tmsdyn_workhourtemplatename as string,\n\t\taddress2_postofficebox as string,\n\t\taddress2_telephone1 as string,\n\t\taddress2_telephone2 as string,\n\t\taddress2_telephone3 as string,\n\t\toriginatingleadidyominame as string,\n\t\tadx_createdbyusername as string,\n\t\taddress1_addressid as string,\n\t\ttraversedpath as string,\n\t\tterritoryidname as string,\n\t\tyominame as string,\n\t\tcreatedonbehalfbyname as string,\n\t\taddress2_name as string,\n\t\topenrevenue_state as boolean,\n\t\taddress1_country as string,\n\t\tprimarysatoriid as string,\n\t\towneridtype as string,\n\t\tentityimageid as string,\n\t\tadx_modifiedbyipaddress as string,\n\t\tprimarytwitterid as string,\n\t\towneridname as string,\n\t\tmodifiedonbehalfbyname as string,\n\t\toverriddencreatedon as string,\n\t\taddress2_composite as string,\n\t\taddress1_stateorprovince as string,\n\t\tmsa_managingpartneridname as string,\n\t\tpreferredserviceidname as string,\n\t\tcreatedbyexternalpartyyominame as string,\n\t\tmsdyn_billingaccountyominame as string,\n\t\taddress1_telephone2 as string,\n\t\taddress1_telephone3 as string,\n\t\taddress1_postofficebox as string,\n\t\tcreatedonbehalfbyyominame as string,\n\t\tslainvokedidname as string,\n\t\taddress2_country as string,\n\t\tsic as string,\n\t\taddress2_utcoffset as string,\n\t\taccountnumber as string,\n\t\taddress2_fax as string,\n\t\taddress2_addressid as string,\n\t\taddress2_longitude as string,\n\t\tftpsiteurl as string,\n\t\tpreferredequipmentidname as string,\n\t\taddress1_primarycontactname as string,\n\t\tmodifiedbyyominame as string,\n\t\tlastonholdtime as string,\n\t\taddress1_line2 as string,\n\t\topenrevenue_date as string,\n\t\taddress2_upszone as string,\n\t\taddress1_postalcode as integer,\n\t\ttickersymbol as string,\n\t\tstageid as string,\n\t\tutcconversiontimezonecode as string,\n\t\tcreatedbyexternalpartyname as string,\n\t\tdefaultpricelevelidname as string,\n\t\tmsdyn_serviceterritoryname as string,\n\t\tstockexchange as string,\n\t\tmsdyn_externalaccountid as string,\n\t\tmsdyn_billingaccountname as string,\n\t\timportsequencenumber as short,\n\t\tmsdyn_workorderinstructions as string,\n\t\tversionnumber as integer,\n\t\taccountid as string,\n\t\taddress1_name as string,\n\t\taddress1_fax as string,\n\t\taddress1_latitude as string,\n\t\tprimarycontactidyominame as string,\n\t\tmodifiedbyname as string,\n\t\tcreatedbyyominame as string,\n\t\taddress2_line1 as string,\n\t\taddress1_upszone as string,\n\t\tmodifiedonbehalfbyyominame as string,\n\t\tslaname as string,\n\t\tparentaccountidyominame as string,\n\t\taddress2_primarycontactname as string,\n\t\topendeals as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'delimited',\n\tfileSystem: 'temp',\n\tfileName: 'account.csv',\n\tcolumnDelimiter: ',',\n\tescapeChar: '\\\\',\n\tqutoChar: '\\\"',\n\tcolumnNamesAsHeader: true,\n\tmultiLineRow: true) ~> Account\nAccount derive(address1_composite_new = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, '\\\\n'),\n\t\taddress1_composite_new2 = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, '\\\\\\\\n'),\n\t\taddress1_composite_new3 = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, ''),\n\t\taddress1_composite_new4 = regexReplace(address1_composite, `(\\r\\n|\\n|\\r)`, ' ')) ~> DerivedAddressComposite\nDerivedAddressComposite select(mapColumn(\n\t\taddress1_composite,\n\t\taddress1_composite_new,\n\t\taddress1_composite_new2,\n\t\taddress1_composite_new3,\n\t\taddress1_composite_new4\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Select1\nSelect1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tformat: 'delimited',\n\tfileSystem: 'temp',\n\tcolumnDelimiter: ',',\n\tescapeChar: '\\\\',\n\tqutoChar: '\\\"',\n\tcolumnNamesAsHeader: true,\n\tpartitionFileNames:['account-new.csv'],\n\tumask: 0022,\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> AccountNew"
 				}
 			},
 			"dependsOn": [
@@ -2129,9 +2129,10 @@
 						"language": "sql"
 					},
 					"currentConnection": {
-						"name": "master",
-						"type": "SqlOnDemand"
-					}
+						"poolName": "Built-in",
+						"databaseName": "Demo"
+					},
+					"resultLimit": 5000
 				},
 				"type": "SqlQuery"
 			},
@@ -2162,14 +2163,15 @@
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\n-- -- This creates an external file format for CSV file with a single header row.\n-- CREATE EXTERNAL FILE FORMAT skipHeader_CSV\n-- WITH (FORMAT_TYPE = DELIMITEDTEXT,\n--       FORMAT_OPTIONS(\n--           FIELD_TERMINATOR = ',',\n--           STRING_DELIMITER = '\"',\n--           FIRST_ROW = 2, \n--           USE_TYPE_DEFAULT = True)\n-- )\n\n-- -- This creates an external file format for a JSON file that compresses the data with the org.apache.io.compress.SnappyCodec data compression method. \n-- -- This applies to Azure SQL Edge ONLY and is currently not supported for other SQL products.\n-- CREATE EXTERNAL FILE FORMAT jsonFileFormat  \n-- WITH (  \n--     FORMAT_TYPE = JSON,  \n--     DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n-- );  \n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE DimActor (\n\t[ActorName] varchar(8000),\n\t[ActorID] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'DimActors.parquet/*.parquet',\n\tDATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM DimActor\nGO\n\n",
+					"query": "USE [Demo];\nGO\n\n\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\n-- -- This creates an external file format for CSV file with a single header row.\n-- CREATE EXTERNAL FILE FORMAT skipHeader_CSV\n-- WITH (FORMAT_TYPE = DELIMITEDTEXT,\n--       FORMAT_OPTIONS(\n--           FIELD_TERMINATOR = ',',\n--           STRING_DELIMITER = '\"',\n--           FIRST_ROW = 2, \n--           USE_TYPE_DEFAULT = True)\n-- )\n\n-- -- This creates an external file format for a JSON file that compresses the data with the org.apache.io.compress.SnappyCodec data compression method. \n-- -- This applies to Azure SQL Edge ONLY and is currently not supported for other SQL products.\n-- CREATE EXTERNAL FILE FORMAT jsonFileFormat  \n-- WITH (  \n--     FORMAT_TYPE = JSON,  \n--     DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n-- );  \n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE DimActor (\n\t[ActorName] varchar(8000),\n\t[ActorID] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'DimActors.parquet/*.parquet',\n\tDATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM DimActor\nGO\n\n",
 					"metadata": {
 						"language": "sql"
 					},
 					"currentConnection": {
 						"poolName": "Built-in",
 						"databaseName": "Demo"
-					}
+					},
+					"resultLimit": 5000
 				},
 				"type": "SqlQuery"
 			},
@@ -2836,2016 +2838,7 @@
 					"saveOutput": true,
 					"synapse_widget": {
 						"version": "0.1",
-						"state": {
-							"9332c06e-629c-417c-b094-e61f57c00a88": {
-								"type": "Synapse.DataFrame",
-								"sync_state": {
-									"table": {
-										"rows": [
-											{
-												"Date": "2017-04-04 00:00:00.0000000",
-												"Revenue": 16710.509999999973,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-14 00:00:00.0000000",
-												"Revenue": 22342.309999999943,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-05 00:00:00.0000000",
-												"Revenue": 16445.629999999972,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-23 00:00:00.0000000",
-												"Revenue": 2958.3100000000004,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-02 00:00:00.0000000",
-												"Revenue": 14541.729999999981,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-18 00:00:00.0000000",
-												"Revenue": 7740.570000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-06 00:00:00.0000000",
-												"Revenue": 13247.439999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-22 00:00:00.0000000",
-												"Revenue": 18014.73999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-18 00:00:00.0000000",
-												"Revenue": 11698.37999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-17 00:00:00.0000000",
-												"Revenue": 9639.48,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-21 00:00:00.0000000",
-												"Revenue": 15161.389999999978,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-14 00:00:00.0000000",
-												"Revenue": 10688.939999999995,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-12 00:00:00.0000000",
-												"Revenue": 16340.709999999972,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-10 00:00:00.0000000",
-												"Revenue": 11223.589999999993,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-24 00:00:00.0000000",
-												"Revenue": 8929.95,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-22 00:00:00.0000000",
-												"Revenue": 12308.019999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-16 00:00:00.0000000",
-												"Revenue": 15076.42999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-17 00:00:00.0000000",
-												"Revenue": 17799.869999999966,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-30 00:00:00.0000000",
-												"Revenue": 18119.709999999963,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-24 00:00:00.0000000",
-												"Revenue": 2353.6500000000005,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-30 00:00:00.0000000",
-												"Revenue": 11703.359999999991,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-27 00:00:00.0000000",
-												"Revenue": 15815.989999999974,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-13 00:00:00.0000000",
-												"Revenue": 9049.839999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-19 00:00:00.0000000",
-												"Revenue": 17280.199999999968,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-26 00:00:00.0000000",
-												"Revenue": 20098.549999999956,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-25 00:00:00.0000000",
-												"Revenue": 17999.759999999966,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-09 00:00:00.0000000",
-												"Revenue": 10094.259999999995,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-17 00:00:00.0000000",
-												"Revenue": 4377.510000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-07 00:00:00.0000000",
-												"Revenue": 2508.5700000000006,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-09 00:00:00.0000000",
-												"Revenue": 4862.250000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-30 00:00:00.0000000",
-												"Revenue": 3203.190000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-26 00:00:00.0000000",
-												"Revenue": 6851.100000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-02 00:00:00.0000000",
-												"Revenue": 7080.940000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-04 00:00:00.0000000",
-												"Revenue": 5936.620000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-05 00:00:00.0000000",
-												"Revenue": 4197.620000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-04 00:00:00.0000000",
-												"Revenue": 18814.37999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-02 00:00:00.0000000",
-												"Revenue": 11053.739999999993,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-07 00:00:00.0000000",
-												"Revenue": 14696.64999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-01 00:00:00.0000000",
-												"Revenue": 13492.309999999983,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-16 00:00:00.0000000",
-												"Revenue": 18934.26999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-06 00:00:00.0000000",
-												"Revenue": 5377.310000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-10 00:00:00.0000000",
-												"Revenue": 9764.479999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-24 00:00:00.0000000",
-												"Revenue": 19034.19999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-19 00:00:00.0000000",
-												"Revenue": 14726.639999999978,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-11 00:00:00.0000000",
-												"Revenue": 19398.959999999963,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-30 00:00:00.0000000",
-												"Revenue": 6246.430000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-08 00:00:00.0000000",
-												"Revenue": 3827.830000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-10 00:00:00.0000000",
-												"Revenue": 7555.690000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-11 00:00:00.0000000",
-												"Revenue": 13022.59999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-21 00:00:00.0000000",
-												"Revenue": 12692.819999999985,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-01 00:00:00.0000000",
-												"Revenue": 6096.5300000000025,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-01 00:00:00.0000000",
-												"Revenue": 14786.569999999982,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-29 00:00:00.0000000",
-												"Revenue": 8290.260000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-23 00:00:00.0000000",
-												"Revenue": 10194.179999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-01 00:00:00.0000000",
-												"Revenue": 14161.929999999978,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-28 00:00:00.0000000",
-												"Revenue": 10648.919999999995,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-27 00:00:00.0000000",
-												"Revenue": 10229.139999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-13 00:00:00.0000000",
-												"Revenue": 14531.699999999984,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-28 00:00:00.0000000",
-												"Revenue": 3098.2300000000014,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-26 00:00:00.0000000",
-												"Revenue": 12767.699999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-28 00:00:00.0000000",
-												"Revenue": 18469.499999999964,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-18 00:00:00.0000000",
-												"Revenue": 7380.820000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-26 00:00:00.0000000",
-												"Revenue": 12662.799999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-08 00:00:00.0000000",
-												"Revenue": 16025.889999999972,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-22 00:00:00.0000000",
-												"Revenue": 6786.090000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-05 00:00:00.0000000",
-												"Revenue": 3962.740000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-17 00:00:00.0000000",
-												"Revenue": 18799.31999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-13 00:00:00.0000000",
-												"Revenue": 3622.960000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-17 00:00:00.0000000",
-												"Revenue": 4327.520000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-07 00:00:00.0000000",
-												"Revenue": 11383.519999999993,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-23 00:00:00.0000000",
-												"Revenue": 2858.370000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-11 00:00:00.0000000",
-												"Revenue": 1818.97,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-24 00:00:00.0000000",
-												"Revenue": 5661.810000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-31 00:00:00.0000000",
-												"Revenue": 11278.569999999992,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-04 00:00:00.0000000",
-												"Revenue": 3113.2400000000007,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-13 00:00:00.0000000",
-												"Revenue": 1609.07,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-26 00:00:00.0000000",
-												"Revenue": 4647.350000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-14 00:00:00.0000000",
-												"Revenue": 11868.25999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-07 00:00:00.0000000",
-												"Revenue": 17080.339999999967,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-27 00:00:00.0000000",
-												"Revenue": 12597.859999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-19 00:00:00.0000000",
-												"Revenue": 7760.580000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-31 00:00:00.0000000",
-												"Revenue": 4692.340000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-22 00:00:00.0000000",
-												"Revenue": 10893.809999999994,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-25 00:00:00.0000000",
-												"Revenue": 14476.789999999975,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-08 00:00:00.0000000",
-												"Revenue": 9619.549999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-25 00:00:00.0000000",
-												"Revenue": 9294.689999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-03 00:00:00.0000000",
-												"Revenue": 4917.200000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-22 00:00:00.0000000",
-												"Revenue": 5466.890000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-21 00:00:00.0000000",
-												"Revenue": 7690.630000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-23 00:00:00.0000000",
-												"Revenue": 20048.579999999954,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-11 00:00:00.0000000",
-												"Revenue": 7540.710000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-06 00:00:00.0000000",
-												"Revenue": 4262.580000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-26 00:00:00.0000000",
-												"Revenue": 11478.46999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-09 00:00:00.0000000",
-												"Revenue": 12308.049999999987,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-28 00:00:00.0000000",
-												"Revenue": 8360.220000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-08 00:00:00.0000000",
-												"Revenue": 20353.43999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-21 00:00:00.0000000",
-												"Revenue": 8620.130000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-28 00:00:00.0000000",
-												"Revenue": 9959.339999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-25 00:00:00.0000000",
-												"Revenue": 9399.65,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-27 00:00:00.0000000",
-												"Revenue": 12722.789999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-16 00:00:00.0000000",
-												"Revenue": 6976.020000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-13 00:00:00.0000000",
-												"Revenue": 5977.010000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-08 00:00:00.0000000",
-												"Revenue": 15431.199999999979,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-09 00:00:00.0000000",
-												"Revenue": 3448.050000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-05 00:00:00.0000000",
-												"Revenue": 6736.180000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-23 00:00:00.0000000",
-												"Revenue": 8495.180000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-20 00:00:00.0000000",
-												"Revenue": 9759.439999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-22 00:00:00.0000000",
-												"Revenue": 2678.4700000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-12 00:00:00.0000000",
-												"Revenue": 18019.74999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-18 00:00:00.0000000",
-												"Revenue": 10429.079999999994,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-01 00:00:00.0000000",
-												"Revenue": 9119.83,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-16 00:00:00.0000000",
-												"Revenue": 5237.030000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-24 00:00:00.0000000",
-												"Revenue": 17285.149999999965,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-13 00:00:00.0000000",
-												"Revenue": 13257.489999999983,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-20 00:00:00.0000000",
-												"Revenue": 5102.100000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-25 00:00:00.0000000",
-												"Revenue": 4427.470000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-02 00:00:00.0000000",
-												"Revenue": 10139.219999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-13 00:00:00.0000000",
-												"Revenue": 2993.3000000000006,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-27 00:00:00.0000000",
-												"Revenue": 9169.74,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-08 00:00:00.0000000",
-												"Revenue": 5906.620000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-07 00:00:00.0000000",
-												"Revenue": 15910.959999999974,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-20 00:00:00.0000000",
-												"Revenue": 6636.230000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-25 00:00:00.0000000",
-												"Revenue": 17285.199999999964,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-03 00:00:00.0000000",
-												"Revenue": 10419.069999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-22 00:00:00.0000000",
-												"Revenue": 14141.91999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-26 00:00:00.0000000",
-												"Revenue": 15286.319999999974,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-24 00:00:00.0000000",
-												"Revenue": 11923.249999999989,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-11 00:00:00.0000000",
-												"Revenue": 3488.030000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-30 00:00:00.0000000",
-												"Revenue": 5461.910000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-19 00:00:00.0000000",
-												"Revenue": 19174.079999999965,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-16 00:00:00.0000000",
-												"Revenue": 12462.869999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-27 00:00:00.0000000",
-												"Revenue": 4722.330000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-15 00:00:00.0000000",
-												"Revenue": 13667.219999999983,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-27 00:00:00.0000000",
-												"Revenue": 24066.34999999993,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-02 00:00:00.0000000",
-												"Revenue": 11318.589999999991,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-17 00:00:00.0000000",
-												"Revenue": 11743.289999999992,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-12 00:00:00.0000000",
-												"Revenue": 14646.669999999978,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-16 00:00:00.0000000",
-												"Revenue": 6921.070000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-14 00:00:00.0000000",
-												"Revenue": 18514.419999999962,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-16 00:00:00.0000000",
-												"Revenue": 12248.04999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-26 00:00:00.0000000",
-												"Revenue": 3807.8300000000013,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-28 00:00:00.0000000",
-												"Revenue": 13342.399999999985,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-29 00:00:00.0000000",
-												"Revenue": 4437.470000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-31 00:00:00.0000000",
-												"Revenue": 14246.939999999984,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-28 00:00:00.0000000",
-												"Revenue": 21008.029999999948,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-05 00:00:00.0000000",
-												"Revenue": 10519.039999999994,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-12 00:00:00.0000000",
-												"Revenue": 7216.390000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-15 00:00:00.0000000",
-												"Revenue": 8590.109999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-29 00:00:00.0000000",
-												"Revenue": 8060.440000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-31 00:00:00.0000000",
-												"Revenue": 16925.38999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-18 00:00:00.0000000",
-												"Revenue": 17050.32999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-19 00:00:00.0000000",
-												"Revenue": 12552.869999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-17 00:00:00.0000000",
-												"Revenue": 9989.329999999994,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-25 00:00:00.0000000",
-												"Revenue": 14551.729999999981,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-11 00:00:00.0000000",
-												"Revenue": 15985.929999999975,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-13 00:00:00.0000000",
-												"Revenue": 20223.599999999944,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-20 00:00:00.0000000",
-												"Revenue": 15331.269999999979,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-07 00:00:00.0000000",
-												"Revenue": 6186.480000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-28 00:00:00.0000000",
-												"Revenue": 6071.550000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-13 00:00:00.0000000",
-												"Revenue": 9929.369999999995,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-16 00:00:00.0000000",
-												"Revenue": 4622.370000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-30 00:00:00.0000000",
-												"Revenue": 14266.859999999982,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-12 00:00:00.0000000",
-												"Revenue": 13457.349999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-13 00:00:00.0000000",
-												"Revenue": 5976.600000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-05 00:00:00.0000000",
-												"Revenue": 7076.460000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-22 00:00:00.0000000",
-												"Revenue": 11098.669999999993,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-29 00:00:00.0000000",
-												"Revenue": 15286.289999999977,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-20 00:00:00.0000000",
-												"Revenue": 5147.0700000000015,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-15 00:00:00.0000000",
-												"Revenue": 6841.090000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-02 00:00:00.0000000",
-												"Revenue": 3787.8500000000013,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-02 00:00:00.0000000",
-												"Revenue": 19114.13999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-16 00:00:00.0000000",
-												"Revenue": 11123.669999999993,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-27 00:00:00.0000000",
-												"Revenue": 10184.229999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-16 00:00:00.0000000",
-												"Revenue": 14686.659999999982,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-27 00:00:00.0000000",
-												"Revenue": 2363.6600000000008,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-07 00:00:00.0000000",
-												"Revenue": 17110.29999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-28 00:00:00.0000000",
-												"Revenue": 17050.339999999967,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-21 00:00:00.0000000",
-												"Revenue": 3922.780000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-07 00:00:00.0000000",
-												"Revenue": 8560.100000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-03 00:00:00.0000000",
-												"Revenue": 9194.779999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-29 00:00:00.0000000",
-												"Revenue": 19044.149999999965,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-12 00:00:00.0000000",
-												"Revenue": 5906.660000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-17 00:00:00.0000000",
-												"Revenue": 14946.48999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-31 00:00:00.0000000",
-												"Revenue": 3552.9800000000014,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-22 00:00:00.0000000",
-												"Revenue": 4797.280000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-20 00:00:00.0000000",
-												"Revenue": 3368.080000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-15 00:00:00.0000000",
-												"Revenue": 5876.650000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-03 00:00:00.0000000",
-												"Revenue": 8150.350000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-01 00:00:00.0000000",
-												"Revenue": 14126.979999999981,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-03 00:00:00.0000000",
-												"Revenue": 11883.229999999989,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-09 00:00:00.0000000",
-												"Revenue": 1859.0700000000006,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-14 00:00:00.0000000",
-												"Revenue": 18149.709999999963,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-10 00:00:00.0000000",
-												"Revenue": 3048.270000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-19 00:00:00.0000000",
-												"Revenue": 3922.7700000000013,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-18 00:00:00.0000000",
-												"Revenue": 14951.529999999977,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-14 00:00:00.0000000",
-												"Revenue": 9109.81,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-19 00:00:00.0000000",
-												"Revenue": 5032.160000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-02 00:00:00.0000000",
-												"Revenue": 12572.859999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-04 00:00:00.0000000",
-												"Revenue": 8959.9,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-08 00:00:00.0000000",
-												"Revenue": 12667.779999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-01 00:00:00.0000000",
-												"Revenue": 17385.129999999972,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-26 00:00:00.0000000",
-												"Revenue": 18894.249999999956,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-25 00:00:00.0000000",
-												"Revenue": 15856.019999999975,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-10 00:00:00.0000000",
-												"Revenue": 3652.9400000000005,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-14 00:00:00.0000000",
-												"Revenue": 4337.830000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-04 00:00:00.0000000",
-												"Revenue": 7980.420000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-23 00:00:00.0000000",
-												"Revenue": 8675.070000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-26 00:00:00.0000000",
-												"Revenue": 14721.639999999978,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-14 00:00:00.0000000",
-												"Revenue": 10863.82999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-17 00:00:00.0000000",
-												"Revenue": 13067.529999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-19 00:00:00.0000000",
-												"Revenue": 8859.970000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-12 00:00:00.0000000",
-												"Revenue": 3183.190000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-10 00:00:00.0000000",
-												"Revenue": 16905.419999999976,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-05 00:00:00.0000000",
-												"Revenue": 14396.78999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-03 00:00:00.0000000",
-												"Revenue": 5921.640000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-23 00:00:00.0000000",
-												"Revenue": 14146.929999999982,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-05 00:00:00.0000000",
-												"Revenue": 5032.140000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-21 00:00:00.0000000",
-												"Revenue": 7060.9900000000025,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-28 00:00:00.0000000",
-												"Revenue": 16230.77999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-06 00:00:00.0000000",
-												"Revenue": 14171.909999999985,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-16 00:00:00.0000000",
-												"Revenue": 2018.9900000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-03 00:00:00.0000000",
-												"Revenue": 9124.789999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-20 00:00:00.0000000",
-												"Revenue": 18859.29999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-24 00:00:00.0000000",
-												"Revenue": 2473.6100000000006,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-20 00:00:00.0000000",
-												"Revenue": 9429.639999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-19 00:00:00.0000000",
-												"Revenue": 5277.000000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-15 00:00:00.0000000",
-												"Revenue": 7835.520000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-18 00:00:00.0000000",
-												"Revenue": 15291.319999999976,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-21 00:00:00.0000000",
-												"Revenue": 3003.2800000000007,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-23 00:00:00.0000000",
-												"Revenue": 4237.600000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-06 00:00:00.0000000",
-												"Revenue": 14316.859999999982,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-21 00:00:00.0000000",
-												"Revenue": 17150.249999999964,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-06 00:00:00.0000000",
-												"Revenue": 10074.279999999995,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-22 00:00:00.0000000",
-												"Revenue": 14721.60999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-10 00:00:00.0000000",
-												"Revenue": 5222.0300000000025,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-04 00:00:00.0000000",
-												"Revenue": 2323.6700000000005,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-13 00:00:00.0000000",
-												"Revenue": 12043.14999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-09 00:00:00.0000000",
-												"Revenue": 17490.089999999967,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-29 00:00:00.0000000",
-												"Revenue": 17370.10999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-22 00:00:00.0000000",
-												"Revenue": 17520.029999999973,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-28 00:00:00.0000000",
-												"Revenue": 6796.150000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-05 00:00:00.0000000",
-												"Revenue": 17030.33999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-07 00:00:00.0000000",
-												"Revenue": 9884.349999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-09 00:00:00.0000000",
-												"Revenue": 5991.580000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-03 00:00:00.0000000",
-												"Revenue": 17849.87999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-25 00:00:00.0000000",
-												"Revenue": 6581.260000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-29 00:00:00.0000000",
-												"Revenue": 14311.879999999983,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-08 00:00:00.0000000",
-												"Revenue": 7685.610000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-25 00:00:00.0000000",
-												"Revenue": 4312.550000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-17 00:00:00.0000000",
-												"Revenue": 2638.5000000000005,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-06 00:00:00.0000000",
-												"Revenue": 3662.920000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-25 00:00:00.0000000",
-												"Revenue": 6571.260000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-06 00:00:00.0000000",
-												"Revenue": 19014.179999999964,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-03 00:00:00.0000000",
-												"Revenue": 16185.809999999972,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-30 00:00:00.0000000",
-												"Revenue": 6681.220000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-30 00:00:00.0000000",
-												"Revenue": 8295.270000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-14 00:00:00.0000000",
-												"Revenue": 8385.190000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-11 00:00:00.0000000",
-												"Revenue": 11078.699999999992,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-29 00:00:00.0000000",
-												"Revenue": 9094.82,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-17 00:00:00.0000000",
-												"Revenue": 9469.579999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-16 00:00:00.0000000",
-												"Revenue": 3582.970000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-05 00:00:00.0000000",
-												"Revenue": 12278.069999999985,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-20 00:00:00.0000000",
-												"Revenue": 11273.599999999995,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-11 00:00:00.0000000",
-												"Revenue": 9075.459999999994,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-10 00:00:00.0000000",
-												"Revenue": 17934.839999999967,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-31 00:00:00.0000000",
-												"Revenue": 8550.130000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-01 00:00:00.0000000",
-												"Revenue": 5761.710000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-10 00:00:00.0000000",
-												"Revenue": 14526.73999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-15 00:00:00.0000000",
-												"Revenue": 15576.119999999977,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-04 00:00:00.0000000",
-												"Revenue": 8275.859999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-18 00:00:00.0000000",
-												"Revenue": 2253.6900000000005,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-24 00:00:00.0000000",
-												"Revenue": 6616.230000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-03 00:00:00.0000000",
-												"Revenue": 4092.680000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-30 00:00:00.0000000",
-												"Revenue": 12622.799999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-18 00:00:00.0000000",
-												"Revenue": 6851.090000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-08 00:00:00.0000000",
-												"Revenue": 3138.430000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-11 00:00:00.0000000",
-												"Revenue": 7760.6100000000015,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-29 00:00:00.0000000",
-												"Revenue": 10199.189999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-24 00:00:00.0000000",
-												"Revenue": 8764.990000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-21 00:00:00.0000000",
-												"Revenue": 18119.73999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-11 00:00:00.0000000",
-												"Revenue": 17779.909999999963,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-26 00:00:00.0000000",
-												"Revenue": 6581.260000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-15 00:00:00.0000000",
-												"Revenue": 9079.81,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-01 00:00:00.0000000",
-												"Revenue": 8844.980000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-20 00:00:00.0000000",
-												"Revenue": 3253.1400000000012,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-18 00:00:00.0000000",
-												"Revenue": 16015.939999999973,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-12 00:00:00.0000000",
-												"Revenue": 5356.950000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-02 00:00:00.0000000",
-												"Revenue": 4297.560000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-15 00:00:00.0000000",
-												"Revenue": 4397.490000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-08 00:00:00.0000000",
-												"Revenue": 12482.929999999986,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-02 00:00:00.0000000",
-												"Revenue": 7930.5,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-10 00:00:00.0000000",
-												"Revenue": 10634.679999999977,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-01 00:00:00.0000000",
-												"Revenue": 4142.6500000000015,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-05 00:00:00.0000000",
-												"Revenue": 17200.259999999966,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-06 00:00:00.0000000",
-												"Revenue": 12183.079999999987,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-20 00:00:00.0000000",
-												"Revenue": 15661.109999999975,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-26 00:00:00.0000000",
-												"Revenue": 4627.370000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-19 00:00:00.0000000",
-												"Revenue": 13862.109999999979,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-15 00:00:00.0000000",
-												"Revenue": 14311.889999999983,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-29 00:00:00.0000000",
-												"Revenue": 5586.800000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-14 00:00:00.0000000",
-												"Revenue": 3438.040000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-23 00:00:00.0000000",
-												"Revenue": 14941.509999999977,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-15 00:00:00.0000000",
-												"Revenue": 3298.350000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-15 00:00:00.0000000",
-												"Revenue": 18474.499999999964,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-18 00:00:00.0000000",
-												"Revenue": 2438.6100000000006,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-07 00:00:00.0000000",
-												"Revenue": 9604.539999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-10 00:00:00.0000000",
-												"Revenue": 7006.020000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-20 00:00:00.0000000",
-												"Revenue": 11303.589999999991,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-09 00:00:00.0000000",
-												"Revenue": 10409.069999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-18 00:00:00.0000000",
-												"Revenue": 10039.259999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-09 00:00:00.0000000",
-												"Revenue": 4937.220000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-31 00:00:00.0000000",
-												"Revenue": 17000.36999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-27 00:00:00.0000000",
-												"Revenue": 4677.340000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-04 00:00:00.0000000",
-												"Revenue": 12597.83999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-27 00:00:00.0000000",
-												"Revenue": 2828.3900000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-15 00:00:00.0000000",
-												"Revenue": 17125.23999999997,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-06 00:00:00.0000000",
-												"Revenue": 2693.4700000000007,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-02 00:00:00.0000000",
-												"Revenue": 6476.330000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-11 00:00:00.0000000",
-												"Revenue": 4897.210000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-24 00:00:00.0000000",
-												"Revenue": 12043.14999999999,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-04 00:00:00.0000000",
-												"Revenue": 14766.66999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-10 00:00:00.0000000",
-												"Revenue": 3068.2400000000007,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-27 00:00:00.0000000",
-												"Revenue": 17130.299999999967,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-06 00:00:00.0000000",
-												"Revenue": 8490.170000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-12 00:00:00.0000000",
-												"Revenue": 2803.420000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-03 00:00:00.0000000",
-												"Revenue": 2298.6900000000005,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-24 00:00:00.0000000",
-												"Revenue": 8260.300000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-11 00:00:00.0000000",
-												"Revenue": 5361.930000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-19 00:00:00.0000000",
-												"Revenue": 12298.039999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-07 00:00:00.0000000",
-												"Revenue": 12178.099999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-06-25 00:00:00.0000000",
-												"Revenue": 5641.810000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-23 00:00:00.0000000",
-												"Revenue": 12752.719999999987,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-14 00:00:00.0000000",
-												"Revenue": 16125.839999999975,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-12 00:00:00.0000000",
-												"Revenue": 10039.309999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-06 00:00:00.0000000",
-												"Revenue": 2893.3500000000004,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-04 00:00:00.0000000",
-												"Revenue": 7045.980000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-19 00:00:00.0000000",
-												"Revenue": 7011.010000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-09 00:00:00.0000000",
-												"Revenue": 11358.549999999992,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-12 00:00:00.0000000",
-												"Revenue": 8829.98,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-09-09 00:00:00.0000000",
-												"Revenue": 7825.530000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-17 00:00:00.0000000",
-												"Revenue": 3403.0500000000006,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-13 00:00:00.0000000",
-												"Revenue": 13472.36999999998,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-07 00:00:00.0000000",
-												"Revenue": 4757.620000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-21 00:00:00.0000000",
-												"Revenue": 12697.769999999988,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-12 00:00:00.0000000",
-												"Revenue": 17100.289999999968,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-24 00:00:00.0000000",
-												"Revenue": 18019.779999999966,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-01-03 00:00:00.0000000",
-												"Revenue": 9835.079999999985,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-09 00:00:00.0000000",
-												"Revenue": 19843.699999999957,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-29 00:00:00.0000000",
-												"Revenue": 2833.4000000000005,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-02-04 00:00:00.0000000",
-												"Revenue": 7030.980000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-05-14 00:00:00.0000000",
-												"Revenue": 6446.350000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-23 00:00:00.0000000",
-												"Revenue": 10609.009999999995,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-11-05 00:00:00.0000000",
-												"Revenue": 5451.900000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-01 00:00:00.0000000",
-												"Revenue": 11233.609999999991,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-07-08 00:00:00.0000000",
-												"Revenue": 7330.8200000000015,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-08-30 00:00:00.0000000",
-												"Revenue": 13997.039999999979,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-10-30 00:00:00.0000000",
-												"Revenue": 2518.5600000000004,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-23 00:00:00.0000000",
-												"Revenue": 4457.480000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-22 00:00:00.0000000",
-												"Revenue": 6921.070000000003,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-28 00:00:00.0000000",
-												"Revenue": 12048.159999999989,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-12-08 00:00:00.0000000",
-												"Revenue": 8155.330000000001,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-03-21 00:00:00.0000000",
-												"Revenue": 19114.13999999996,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2017-04-21 00:00:00.0000000",
-												"Revenue": 9059.830000000002,
-												"Forecasted": 0
-											},
-											{
-												"Date": "2018-01-01 00:00:00",
-												"Revenue": 1704.5942850792812,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-02 00:00:00",
-												"Revenue": 11083.741396599715,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-03 00:00:00",
-												"Revenue": 8525.144962817738,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-04 00:00:00",
-												"Revenue": 7137.419608577422,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-05 00:00:00",
-												"Revenue": 6478.80547308825,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-06 00:00:00",
-												"Revenue": 4923.9116112371385,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-07 00:00:00",
-												"Revenue": 3345.6410866947886,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-08 00:00:00",
-												"Revenue": 1866.4841036808948,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-09 00:00:00",
-												"Revenue": 12429.99520328702,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-10 00:00:00",
-												"Revenue": 9882.826828136242,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-11 00:00:00",
-												"Revenue": 7753.041481780579,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-12 00:00:00",
-												"Revenue": 6184.490550112058,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-13 00:00:00",
-												"Revenue": 4775.859447905529,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-14 00:00:00",
-												"Revenue": 3496.1696497577464,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-15 00:00:00",
-												"Revenue": 2280.187027300863,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-16 00:00:00",
-												"Revenue": 15724.942410206932,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-17 00:00:00",
-												"Revenue": 14707.717799101953,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-18 00:00:00",
-												"Revenue": 11912.640813956934,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-19 00:00:00",
-												"Revenue": 9762.362073913893,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-20 00:00:00",
-												"Revenue": 7740.214241682353,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-21 00:00:00",
-												"Revenue": 5287.218603346393,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-22 00:00:00",
-												"Revenue": 3058.871214394155,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-23 00:00:00",
-												"Revenue": 17648.306063899272,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-24 00:00:00",
-												"Revenue": 14880.080199404525,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-25 00:00:00",
-												"Revenue": 12407.945974520217,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-26 00:00:00",
-												"Revenue": 10250.126833425606,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-27 00:00:00",
-												"Revenue": 8248.666211821863,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-28 00:00:00",
-												"Revenue": 5758.675475145576,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-29 00:00:00",
-												"Revenue": 3047.3586665648527,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-30 00:00:00",
-												"Revenue": 16944.867466765376,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-01-31 00:00:00",
-												"Revenue": 13993.862576710684,
-												"Forecasted": 20000
-											},
-											{
-												"Date": "2018-02-01 00:00:00",
-												"Revenue": 10918.38059354186,
-												"Forecasted": 20000
-											}
-										],
-										"schema": {
-											"Date": "string",
-											"Revenue": "double",
-											"Forecasted": "int"
-										}
-									},
-									"isSummary": false,
-									"language": "scala"
-								},
-								"persist_state": {
-									"view": {
-										"type": "details",
-										"chartOptions": {
-											"chartType": "line",
-											"aggregationType": "sum",
-											"categoryFieldKeys": [
-												"Date"
-											],
-											"seriesFieldKeys": [
-												"Revenue",
-												"Forecasted"
-											],
-											"isStacked": false
-										}
-									}
-								}
-							}
-						}
+						"state": {}
 					},
 					"kernelspec": {
 						"name": "synapse_pyspark",
@@ -4866,8 +2859,10 @@
 						"sparkVersion": "2.4",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56
-					}
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
 					{
@@ -4924,6 +2919,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"import mlflow\r\n",
 							"\r\n",
@@ -5022,6 +3018,298 @@
 						"execution_count": 10
 					}
 				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 02 -- 01 Shared Metastore')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "SparkPool01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1",
+						"state": {}
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/7c9d382c-5964-48db-9cf6-c595c7ba4339/resourceGroups/synapse-rg/providers/Microsoft.Synapse/workspaces/synapse-syn/bigDataPools/SparkPool01",
+						"name": "SparkPool01",
+						"type": "Spark",
+						"endpoint": "https://synapse-syn.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"SHOW DATABASES"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"SHOW TABLES FROM default"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"CREATE DATABASE TestSparkDb"
+						],
+						"outputs": [],
+						"execution_count": 4
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Create a managed table backed by Parquet in Spark and query from serverless SQL pool"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"CREATE TABLE TestSparkDb.Person(id int, name string, age int) USING Parquet"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"INSERT INTO TestSparkDb.Person VALUES\r\n",
+							"    (1, 'Alice', 21)\r\n",
+							"    , (2, 'Bob', 42)\r\n",
+							"    , (3, 'Carl', 63)"
+						],
+						"outputs": [],
+						"execution_count": 8
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"SELECT * FROM TestSparkDb.Person"
+						],
+						"outputs": [],
+						"execution_count": 10
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Create an external table backed by Parquet in Spark and query from serverless SQL pool"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"CREATE TABLE testsparkdb.dimcustomers\r\n",
+							"    USING Parquet\r\n",
+							"    LOCATION \"abfss://gold@synapsedatalakeg2.dfs.core.windows.net/DimCustomers.parquet/\""
+						],
+						"outputs": [],
+						"execution_count": 11
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"SELECT * FROM TestSparkDb.DimCustomers"
+						],
+						"outputs": [],
+						"execution_count": 12
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Demo 02 -- 01 Shared Metastore')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- View tables in database\nUSE testsparkdb;\nSELECT * FROM sys.tables;\n\n\n-- Query Spark managed table\nSELECT * FROM person;\n\n\n-- Query Spark external table\nSELECT * FROM dimcustomers;\n\n\n-- Create external table in 'default' database\nUSE [default];\nGO\n\nSELECT * FROM sys.tables;\n\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE DimActor (\n\t[ActorName] varchar(8000),\n\t[ActorID] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'DimActors.parquet/*.parquet',\n\tDATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM DimActor\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "default"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
 			},
 			"dependsOn": []
 		}
