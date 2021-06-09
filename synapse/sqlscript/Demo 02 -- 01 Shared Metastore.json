@@ -2,7 +2,7 @@
 	"name": "Demo 02 -- 01 Shared Metastore",
 	"properties": {
 		"content": {
-			"query": "-- View tables in database\nUSE testsparkdb;\nSELECT * FROM sys.tables;\n\n",
+			"query": "-- View tables in database\nUSE testsparkdb;\nSELECT * FROM sys.tables;\n\n-- Query Spark managed table\nSELECT * FROM person;\n\n-- Query Spark external table\nSELECT * FROM dimcustomers;\n\n",
 			"metadata": {
 				"language": "sql"
 			},
