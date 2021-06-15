@@ -2,7 +2,7 @@
 	"name": "Demo 02 -- 01 Shared Metastore",
 	"properties": {
 		"content": {
-			"query": "-- View tables in database\nUSE testsparkdb;\nSELECT * FROM sys.tables;\n\n\n-- Query Spark managed table\nSELECT * FROM person;\n\n\n-- Query Spark external table\nSELECT * FROM dimcustomers;\n\n\n-- Create external table in 'default' database\nUSE [default];\nGO\n\nSELECT * FROM sys.tables;\n\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( \n        FORMAT_TYPE = PARQUET,  \n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'  \n    )\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'gold_synapsedatalakeg2_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [gold_synapsedatalakeg2_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://synapsedatalakeg2.dfs.core.windows.net/gold', \n\t)\nGo\n\nCREATE EXTERNAL TABLE DimActor (\n\t[ActorName] varchar(8000),\n\t[ActorID] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'DimActors.parquet/*.parquet',\n\tDATA_SOURCE = [gold_synapsedatalakeg2_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM DimActor\nGO",
+			"query": "-- View tables in database\nUSE testsparkdb;\nSELECT * FROM sys.tables;\n\n\n-- Query Spark managed table\nSELECT * FROM person;\n\n\n-- Query Spark external table\nSELECT * FROM dimcustomers;\n",
 			"metadata": {
 				"language": "sql"
 			},
