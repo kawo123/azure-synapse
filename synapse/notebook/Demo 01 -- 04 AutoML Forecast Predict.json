@@ -24,7 +24,7 @@
 			"synapse_widget": {
 				"version": "0.1",
 				"state": {
-					"9332c06e-629c-417c-b094-e61f57c00a88": {
+					"7d5605e5-0306-49cf-b8ac-13f016eb5352": {
 						"type": "Synapse.DataFrame",
 						"sync_state": {
 							"table": {
@@ -2024,10 +2024,10 @@
 										"Date"
 									],
 									"seriesFieldKeys": [
-										"Revenue",
-										"Forecasted"
+										"Revenue"
 									],
-									"isStacked": false
+									"isStacked": false,
+									"pivotFieldKey": "Forecasted"
 								}
 							}
 						}
@@ -2084,7 +2084,7 @@
 					"\r\n",
 					"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)"
 				],
-				"execution_count": 4
+				"execution_count": 2
 			},
 			{
 				"cell_type": "code",
@@ -2107,7 +2107,7 @@
 					"df_orig = df_orig.withColumn('Forecasted', lit(0))\r\n",
 					"df_orig.show(10)"
 				],
-				"execution_count": 5
+				"execution_count": 3
 			},
 			{
 				"cell_type": "code",
@@ -2118,7 +2118,7 @@
 					"mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())\r\n",
 					"print(f'MLFlow Tracking URI: {ws.get_mlflow_tracking_uri()}')"
 				],
-				"execution_count": 6
+				"execution_count": 4
 			},
 			{
 				"cell_type": "code",
@@ -2152,7 +2152,7 @@
 					"\r\n",
 					"print(pdf_forecast.head(5))"
 				],
-				"execution_count": 8
+				"execution_count": 5
 			},
 			{
 				"cell_type": "code",
@@ -2181,7 +2181,7 @@
 					"\r\n",
 					"df_forecast.show(5)"
 				],
-				"execution_count": 9
+				"execution_count": 6
 			},
 			{
 				"cell_type": "code",
@@ -2202,7 +2202,7 @@
 					"\r\n",
 					"display(df) # create line graph to visualize the forecast"
 				],
-				"execution_count": 10
+				"execution_count": 7
 			}
 		]
 	}

@@ -110,7 +110,7 @@
 					"%%sql\r\n",
 					"SHOW DATABASES"
 				],
-				"execution_count": 5
+				"execution_count": 7
 			},
 			{
 				"cell_type": "code",
