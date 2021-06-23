@@ -1,0 +1,17 @@
+{
+	"name": "Misc - Kill All Inactive Sessions",
+	"properties": {
+		"content": {
+			"query": "USE master;\nGO\n\nCREATE PROCEDURE dbo.KillInactiveSessions\nAS\n    DECLARE @user_spid INT\n    DECLARE CurSPID CURSOR FAST_FORWARD\n    FOR\n    SELECT SPID\n    FROM master.dbo.sysprocesses (NOLOCK)\n    WHERE spid>50 -- avoid system threads\n    AND status='sleeping' -- only sleeping threads\n    AND DATEDIFF(HOUR,last_batch,GETDATE())>=1 -- thread sleeping for 1 hours\n    AND spid<>@@spid -- ignore current spid\n    OPEN CurSPID\n    FETCH NEXT FROM CurSPID INTO @user_spid\n    WHILE (@@FETCH_STATUS=0)\n    BEGIN\n    PRINT 'Killing '+CONVERT(VARCHAR,@user_spid)\n    EXEC('KILL '+@user_spid)\n    FETCH NEXT FROM CurSPID INTO @user_spid\n    END\n    CLOSE CurSPID\n    DEALLOCATE CurSPID\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"poolName": "small",
+				"databaseName": "master"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
