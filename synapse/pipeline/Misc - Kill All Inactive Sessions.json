@@ -1,0 +1,59 @@
+{
+	"name": "Misc - Kill All Inactive Sessions",
+	"properties": {
+		"activities": [
+			{
+				"name": "Kill Inactive Session",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlPoolSource",
+						"sqlReaderQuery": "USE master;\nGO\n\nDECLARE @user_spid INT\nDECLARE CurSPID CURSOR FAST_FORWARD\nFOR\nSELECT SPID\nFROM master.dbo.sysprocesses (NOLOCK)\nWHERE spid>50 -- avoid system threads\nAND status='sleeping' -- only sleeping threads\nAND DATEDIFF(HOUR,last_batch,GETDATE())>=1 -- thread sleeping for 1 hours\nAND spid<>@@spid -- ignore current spid\nOPEN CurSPID\nFETCH NEXT FROM CurSPID INTO @user_spid\nWHILE (@@FETCH_STATUS=0)\nBEGIN\nPRINT 'Killing '+CONVERT(VARCHAR,@user_spid)\nEXEC('KILL '+@user_spid)\nFETCH NEXT FROM CurSPID INTO @user_spid\nEND\nCLOSE CurSPID\nDEALLOCATE CurSPID\nGO"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".csv"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "SqlPoolTable1",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "CSV_Temp_csv",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": []
+	}
+}
