@@ -6,7 +6,7 @@
 		"pipelines": [
 			{
 				"pipelineReference": {
-					"referenceName": "Misc - Kill All Inactive Sessions",
+					"referenceName": "Pipeline_Misc_KillAllInactiveSessions",
 					"type": "PipelineReference"
 				}
 			}
